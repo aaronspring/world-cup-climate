@@ -1,49 +1,35 @@
 {
-  "note": "Illustrative World Cup 2026 fixtures for the demo. Edit freely. 'home'/'away' are FIFA nations whose CAPITAL cities are compared against the match VENUE. Coordinates are decimal degrees (lon in -180..180; normalised to 0-360 at query time).",
+  "note": "Real FIFA World Cup 2026 fixtures for 2026-06-15 (group stage), verified from FOX Sports / ESPN / Al Jazeera / Ticketmaster (Jun 2026). 'home'/'away' are the competing nations whose CAPITAL cities are compared against the match VENUE. Coordinates are decimal degrees (lon -180..180; normalised to 0-360 at query time); venue/capital coords are approximate.",
   "capitals": {
-    "Mexico":        {"name": "Mexico City",     "lat": 19.4326,  "lon": -99.1332, "flag": "🇲🇽"},
-    "United States": {"name": "Washington, D.C.", "lat": 38.9072,  "lon": -77.0369, "flag": "🇺🇸"},
-    "Canada":        {"name": "Ottawa",           "lat": 45.4215,  "lon": -75.6972, "flag": "🇨🇦"},
-    "Brazil":        {"name": "Brasília",         "lat": -15.7939, "lon": -47.8828, "flag": "🇧🇷"},
-    "Argentina":     {"name": "Buenos Aires",     "lat": -34.6037, "lon": -58.3816, "flag": "🇦🇷"},
-    "England":       {"name": "London",           "lat": 51.5074,  "lon": -0.1278,  "flag": "🏴"},
-    "France":        {"name": "Paris",            "lat": 48.8566,  "lon": 2.3522,   "flag": "🇫🇷"},
-    "Germany":       {"name": "Berlin",           "lat": 52.5200,  "lon": 13.4050,  "flag": "🇩🇪"},
-    "Spain":         {"name": "Madrid",           "lat": 40.4168,  "lon": -3.7038,  "flag": "🇪🇸"},
-    "Netherlands":   {"name": "Amsterdam",        "lat": 52.3676,  "lon": 4.9041,   "flag": "🇳🇱"},
-    "Portugal":      {"name": "Lisbon",           "lat": 38.7223,  "lon": -9.1393,  "flag": "🇵🇹"},
-    "Croatia":       {"name": "Zagreb",           "lat": 45.8150,  "lon": 15.9819,  "flag": "🇭🇷"},
-    "Morocco":       {"name": "Rabat",            "lat": 34.0209,  "lon": -6.8416,  "flag": "🇲🇦"},
-    "Senegal":       {"name": "Dakar",            "lat": 14.7167,  "lon": -17.4677, "flag": "🇸🇳"},
-    "Japan":         {"name": "Tokyo",            "lat": 35.6762,  "lon": 139.6503, "flag": "🇯🇵"},
-    "South Korea":   {"name": "Seoul",            "lat": 37.5665,  "lon": 126.9780, "flag": "🇰🇷"},
-    "Australia":     {"name": "Canberra",         "lat": -35.2809, "lon": 149.1300, "flag": "🇦🇺"}
+    "Spain":        {"name": "Madrid",       "lat": 40.4168,  "lon": -3.7038,   "flag": "🇪🇸"},
+    "Cape Verde":   {"name": "Praia",        "lat": 14.9218,  "lon": -23.5087,  "flag": "🇨🇻"},
+    "Belgium":      {"name": "Brussels",     "lat": 50.8503,  "lon": 4.3517,    "flag": "🇧🇪"},
+    "Egypt":        {"name": "Cairo",        "lat": 30.0444,  "lon": 31.2357,   "flag": "🇪🇬"},
+    "Saudi Arabia": {"name": "Riyadh",       "lat": 24.7136,  "lon": 46.6753,   "flag": "🇸🇦"},
+    "Uruguay":      {"name": "Montevideo",   "lat": -34.9011, "lon": -56.1645,  "flag": "🇺🇾"},
+    "Iran":         {"name": "Tehran",       "lat": 35.6892,  "lon": 51.3890,   "flag": "🇮🇷"},
+    "New Zealand":  {"name": "Wellington",   "lat": -41.2865, "lon": 174.7762,  "flag": "🇳🇿"}
   },
   "matches": [
     {
-      "date": "2026-06-15", "stage": "Group Stage", "group": "A",
-      "home": "Mexico", "away": "Croatia",
-      "venue": {"name": "Estadio Azteca", "city": "Mexico City", "country": "Mexico", "lat": 19.3029, "lon": -99.1505}
+      "date": "2026-06-15", "stage": "Group Stage", "group": "H",
+      "home": "Spain", "away": "Cape Verde",
+      "venue": {"name": "Mercedes-Benz Stadium", "city": "Atlanta", "country": "United States", "lat": 33.7554, "lon": -84.4008}
     },
     {
-      "date": "2026-06-15", "stage": "Group Stage", "group": "D",
-      "home": "United States", "away": "Senegal",
-      "venue": {"name": "SoFi Stadium", "city": "Los Angeles", "country": "United States", "lat": 33.9535, "lon": -118.3392}
+      "date": "2026-06-15", "stage": "Group Stage", "group": "G",
+      "home": "Belgium", "away": "Egypt",
+      "venue": {"name": "Lumen Field", "city": "Seattle", "country": "United States", "lat": 47.5952, "lon": -122.3316}
     },
     {
-      "date": "2026-06-15", "stage": "Group Stage", "group": "C",
-      "home": "Brazil", "away": "Morocco",
-      "venue": {"name": "Hard Rock Stadium", "city": "Miami", "country": "United States", "lat": 25.9580, "lon": -80.2389}
+      "date": "2026-06-15", "stage": "Group Stage", "group": "H",
+      "home": "Saudi Arabia", "away": "Uruguay",
+      "venue": {"name": "Hard Rock Stadium", "city": "Miami Gardens", "country": "United States", "lat": 25.9580, "lon": -80.2389}
     },
     {
-      "date": "2026-06-15", "stage": "Group Stage", "group": "F",
-      "home": "England", "away": "Japan",
-      "venue": {"name": "BMO Field", "city": "Toronto", "country": "Canada", "lat": 43.6332, "lon": -79.4185}
-    },
-    {
-      "date": "2026-06-16", "stage": "Group Stage", "group": "B",
-      "home": "Argentina", "away": "Australia",
-      "venue": {"name": "AT&T Stadium", "city": "Arlington", "country": "United States", "lat": 32.7473, "lon": -97.0945}
+      "date": "2026-06-15", "stage": "Group Stage", "group": "G",
+      "home": "Iran", "away": "New Zealand",
+      "venue": {"name": "SoFi Stadium", "city": "Inglewood", "country": "United States", "lat": 33.9535, "lon": -118.3392}
     }
   ]
 }

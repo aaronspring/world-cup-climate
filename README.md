@@ -128,7 +128,8 @@ uv run --extra dev pytest
 
 ## Notes & caveats
 
-- Fixtures in `data/fixtures.json` are **illustrative** 2026 placeholders — swap
-  in a real schedule (or wire up a fixtures API) as needed.
+- Fixtures in `data/fixtures.json` are the **real** World Cup 2026 fixtures for
+  2026-06-15 (verified from FOX Sports / ESPN / Al Jazeera / Ticketmaster). Add
+  more match days as needed, or wire up a fixtures API.
 - City climate is sampled at the **nearest grid cell**.
 - The synthetic provider is for development/demo only; it is *not* a forecast.
