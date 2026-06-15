@@ -1,0 +1,34 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+venv
+
+# notebooks
+.ipynb_checkpoints
+
+#
+data
+*/*.nc
+*/*.zarr
+*.nc
+*.zarr
+
+# secrets
+.env
+~/.cdsapirc # for reference
+
+TODO.md
+
+# macOS files
+.DS_Store
+
+# Dask reports
+dask-report*.html
+!docs/dask-report*.html
