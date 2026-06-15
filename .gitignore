@@ -1,0 +1,14 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Local cache of fetched point series
+cache/*
+!cache/.gitkeep
+
+# Env / secrets — never commit ARRAYLAKE_TOKEN
+.env

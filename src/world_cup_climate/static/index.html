@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>World Cup Climate</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>⚽ World Cup Climate</h1>
+      <p class="tagline">
+        Match-day weather at the venue vs. the competing nations' capitals —
+        now vs. a 10-year climatology, over the 30 days before kickoff.
+      </p>
+      <p id="meta" class="meta"></p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="matches" class="matches"></section>
+    <section id="report" class="report hidden">
+      <div id="matchHead" class="match-head"></div>
+      <div id="cards" class="cards"></div>
+      <div id="charts" class="charts"></div>
+      <p class="footnote" id="footnote"></p>
+    </section>
+    <div id="status" class="status"></div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

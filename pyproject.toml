@@ -1,0 +1,37 @@
+[project]
+name = "world-cup-climate"
+version = "0.1.0"
+description = "Compare today's World Cup match-day climate at the venue vs the competing nations' capitals (now vs a 10-year climatology), powered by ERA5 + ECMWF IFS data on Arraylake."
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+    "arraylake>=1.0.0",
+    "icechunk>=1.0.0",
+    "xarray>=2025.1.0",
+    "zarr>=3.0.0",
+    "numpy>=2.0.0",
+    "pandas>=2.2.0",
+    "requests>=2.32.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "jinja2>=3.1.0",
+]
+
+[project.optional-dependencies]
+demo = [
+    "jupyter>=1.0.0",
+    "matplotlib>=3.9.0",
+]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+world-cup-climate = "world_cup_climate.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/world_cup_climate"]
