@@ -33,7 +33,7 @@ VARS = ["2t", "2d"]  # instantaneous; valid at step 0
 
 # North-America t2m overlay: bbox + downsample for a compact web raster.
 NA_BBOX = (-125.0, 14.0, -65.0, 60.0)  # west, south, east, north
-NA_STRIDE = 5  # 0.1° grid -> 0.5°: ~120×93 cells, plenty for a continental field
+NA_STRIDE = 1  # native 0.1° grid, no resampling -> ~601×461 cells
 
 CACHE_DIR = Path(os.environ.get("WCC_CACHE_DIR", PROJECT_DIR / ".cache" / "ifs"))
 
@@ -237,9 +237,14 @@ def na_t2m_fields(valid_times: list) -> tuple[dict[str, list[float]], dict, list
         nonlocal meta
         g = grid.sortby("latitude", ascending=False).sortby("longitude")
         block = np.round(kelvin_to_celsius(g.load().values), 1)  # (k, ny, nx)
+        # lat/lon are cell *centers*; the image-source quad must sit on cell
+        # *edges*, so pad the bounds by half a grid step (else a ~½-cell shift).
+        lo, la = g.longitude.values, g.latitude.values
+        dx = float(np.diff(lo).mean()) / 2 if lo.size > 1 else 0.0
+        dy = float(np.diff(la).mean()) / 2 if la.size > 1 else 0.0
         meta = {
-            "bounds": [float(g.longitude.min()), float(g.latitude.min()),
-                       float(g.longitude.max()), float(g.latitude.max())],
+            "bounds": [float(lo.min()) - dx, float(la.min()) - dy,
+                       float(lo.max()) + dx, float(la.max()) + dy],
             "nx": int(g.sizes["longitude"]), "ny": int(g.sizes["latitude"]),
         }
         for p, i in enumerate(sorted(need)):

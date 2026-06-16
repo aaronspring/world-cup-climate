@@ -5,21 +5,38 @@ import { tempColor, tempRGB } from "./colors";
 
 interface Grid { bounds: [number, number, number, number]; nx: number; ny: number; values: (number | null)[] }
 
-// Colorize a t2m grid (row-major from NW) into a data-URL + image coordinates.
+// Web-Mercator northing for a latitude in degrees, and its inverse.
+const mercY = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+const invMercY = (y: number) => (360 / Math.PI) * Math.atan(Math.exp(y)) - 90;
+
+// Colorize a t2m grid (row-major from NW, equirectangular) into a data-URL +
+// image coordinates. MapLibre's image source maps the texture *linearly in
+// Web-Mercator* between the corner coords, but our rows are evenly spaced in
+// *latitude* — so we resample rows into Mercator-even spacing here, else the
+// field drifts north by several degrees at mid-latitudes. Longitude is already
+// linear in Mercator, so columns pass through untouched (nearest-row sampling
+// only; no values are averaged or invented).
 async function loadOverlay(url: string) {
   const g: Grid = await (await fetch(url)).json();
-  const [w, s, e, n] = g.bounds;
+  const [w, s, e, n] = g.bounds; // cell edges
   const cv = document.createElement("canvas");
   cv.width = g.nx;
   cv.height = g.ny;
   const ctx = cv.getContext("2d")!;
   const img = ctx.createImageData(g.nx, g.ny);
-  for (let i = 0; i < g.values.length; i++) {
-    const v = g.values[i];
-    const o = i * 4;
-    if (v == null) { img.data[o + 3] = 0; continue; } // masked/ocean -> transparent
-    const [r, gg, b] = tempRGB(v);
-    img.data[o] = r; img.data[o + 1] = gg; img.data[o + 2] = b; img.data[o + 3] = 255;
+  const yN = mercY(n), yS = mercY(s);
+  for (let row = 0; row < g.ny; row++) {
+    // Latitude this output row must show so it lands correctly in Mercator.
+    const lat = invMercY(yN + ((yS - yN) * (row + 0.5)) / g.ny);
+    let src = Math.floor(((n - lat) / (n - s)) * g.ny); // nearest source row
+    src = Math.min(g.ny - 1, Math.max(0, src));
+    for (let col = 0; col < g.nx; col++) {
+      const v = g.values[src * g.nx + col];
+      const o = (row * g.nx + col) * 4;
+      if (v == null) { img.data[o + 3] = 0; continue; } // masked/ocean -> transparent
+      const [r, gg, b] = tempRGB(v);
+      img.data[o] = r; img.data[o + 1] = gg; img.data[o + 2] = b; img.data[o + 3] = 255;
+    }
   }
   ctx.putImageData(img, 0, 0);
   // image-source coordinates: TL, TR, BR, BL
