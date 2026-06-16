@@ -94,8 +94,7 @@ export default function Chart({
           strokeDasharray="4 3"
           label={{ value: "kickoff", fill: "#facc15", fontSize: 10, position: "insideTopRight" }}
         />
-        <Area type="monotone" dataKey="venue" stroke="none" fill="url(#venueFill)" name="Venue" />
-        <Line type="monotone" dataKey="venue" name="Venue" stroke={meta.color} strokeWidth={2.4} dot={false} />
+        <Area type="monotone" dataKey="venue" name="Venue" stroke={meta.color} strokeWidth={2.4} fill="url(#venueFill)" dot={false} />
         <Line type="monotone" dataKey="a" name={match.stats.team_a.home} stroke="#38bdf8" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />
         <Line type="monotone" dataKey="b" name={match.stats.team_b.home} stroke="#c084fc" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />
       </ComposedChart>
