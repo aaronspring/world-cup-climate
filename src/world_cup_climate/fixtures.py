@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-import pandas as pd
-
 from .config import DATA_DIR
 from .locations import Place, capital, venue
 
@@ -19,10 +17,6 @@ class Match:
     team_a: str
     team_b: str
     venue_key: str
-
-    @property
-    def matchday(self) -> pd.Timestamp:
-        return pd.Timestamp(self.date)
 
     @property
     def title(self) -> str:

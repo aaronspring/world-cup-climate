@@ -20,10 +20,6 @@ class Place:
     lat: float         # degrees north
     lon: float         # degrees east, -180..180 (convert with % 360 at read time)
 
-    @property
-    def lon360(self) -> float:
-        return self.lon % 360
-
 
 @lru_cache(maxsize=1)
 def _raw() -> dict:
@@ -57,7 +53,3 @@ def capital(country: str) -> Place:
         lat=c["lat"],
         lon=c["lon"],
     )
-
-
-def known_capitals() -> list[str]:
-    return sorted(_raw()["capitals"])

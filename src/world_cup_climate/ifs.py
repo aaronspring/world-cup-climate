@@ -74,8 +74,6 @@ def _ttl_cache(seconds: int, maxsize: int):
 
 @_ttl_cache(3600, maxsize=2)  # 1h: re-open the store hourly
 def open_ifs() -> xr.Dataset:
-    import os
-
     from arraylake import Client
 
     # CACHE_ARRAYLAKE_TOKEN is the one with access to the open IFS repo;

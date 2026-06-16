@@ -161,16 +161,12 @@ def window_mean(times: pd.DatetimeIndex, vals: np.ndarray, ko: pd.Timestamp) -> 
     return float(np.mean(sel)) if len(sel) else float(np.mean(vals))
 
 
-def venue_place(m: Match) -> Place:
-    return m.venue
-
-
 def build_match(m: Match, series_fn) -> dict:
     md = pd.Timestamp(m.date)
     times = pd.date_range(md - WINDOW_BEFORE, md + WINDOW_AFTER, freq="1h")
     ko = pd.Timestamp(m.kickoff_utc).tz_convert(None)
 
-    v, ca, cb = venue_place(m), m.capital_a, m.capital_b
+    v, ca, cb = m.venue, m.capital_a, m.capital_b
     sv = series_fn(v, times)
     sa = series_fn(ca, times)
     sb = series_fn(cb, times)
