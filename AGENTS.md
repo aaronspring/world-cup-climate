@@ -62,7 +62,12 @@ meaningful exactly at `step=0`.
   - `config.py`: repo names, defaults
   - `era5.py` / `forecast.py` / `climate.py` / `viz.py`: earlier richer ERA5 + stitching
     prototype, kept for the planned historical normal overlay
-- `app/`: frontend (Streamlit target)
+- `frontend/`: React + MapLibre + Tailwind SPA (Vite). Reads static JSON from
+  `frontend/public/data/`. `npm install && npm run dev`.
+- `backend/recompute.py`: builds the per-match JSON contract the frontend reads
+  (`cycles/`, `days/`, `matches/`). `--source demo` (synthetic, default) or `--source
+  ifs` (real point extraction). `backend/test_recompute.py` has runnable self-checks.
+- `app/`: earlier Streamlit target (unused; superseded by `frontend/`)
 - `data/`: curated fixtures/locations JSON and local working data
 - `notebooks/`: exploratory analysis and experiments
 - `scripts/`: operational and one off helper scripts

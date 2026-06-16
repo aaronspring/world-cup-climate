@@ -36,6 +36,29 @@ viz_ifs.plot_match(match.places(), col="heat_index_c", matchday=match.date)
 - `ifs.matchday_value(series, matchday, col)` → daily-max on the matchday.
 - Fixtures (`data/fixtures.json`) and locations (`data/locations.json`) are curated for the demo.
 
+## Web app (React + MapLibre)
+
+A static single-page app: a date-pickable map of the host cities with a
+temperature-colored pin per match. Click a pin (or a match in the list) for a glass
+card with venue-vs-home comparison stats and per-variable forecast charts. See
+`docs/ARCHITECTURE.md`.
+
+```bash
+# 1. generate the per-match JSON the frontend reads (writes frontend/public/data/)
+uv run python backend/recompute.py            # --source demo (default, no auth)
+uv run python backend/recompute.py --source ifs   # real IFS t2m/d2m (needs Arraylake auth)
+
+# 2. run the frontend
+cd frontend
+npm install
+npm run dev        # http://localhost:5173
+```
+
+The committed `frontend/public/data/` is demo data, so `npm run dev` works without
+running the backend first. `--source demo` is a physically plausible synthetic
+forecast (smooth lat/lon climate field + diurnal cycle); swap in full server-side IFS
+extraction for live data. The map basemap uses public CARTO tiles (no token).
+
 ## Ideas / next steps
 
 - **Heat index via [`xclim`](https://xclim.readthedocs.io/en/stable/api_indicators.html#xclim.indicators.convert.heat_index)** —

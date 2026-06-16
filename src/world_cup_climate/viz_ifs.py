@@ -17,7 +17,7 @@ VAR_LABELS = {
 }
 
 
-def plot_match(places, col: str = "t2m_c", matchday=None, ax=None):
+def plot_match(places, col: str = "t2m_c", kickoff=None, ax=None):
     """One chart: best-estimate + 15-day forecast for the match's 3 locations.
 
     `places` is an iterable of Place (venue, capital_a, capital_b).
@@ -27,6 +27,8 @@ def plot_match(places, col: str = "t2m_c", matchday=None, ax=None):
         _, ax = plt.subplots(figsize=(11, 4.6))
     label, unit = VAR_LABELS.get(col, (col, ""))
     init = latest_init()
+    places = list(places)
+    venue_city = places[0].label.split(" — ")[-1]  # "Match venue — {city}"
 
     for place, color in zip(places, COLORS):
         s = location_series(place.lat, place.lon)
@@ -39,12 +41,14 @@ def plot_match(places, col: str = "t2m_c", matchday=None, ax=None):
 
     ax.axvline(init, color="k", lw=0.9, alpha=0.45)
     ax.text(init, ax.get_ylim()[1], "  forecast →", va="top", fontsize=8, alpha=0.6)
-    if matchday is not None:
-        md = pd.Timestamp(matchday)
-        ax.axvspan(md, md + pd.Timedelta(days=1), color="gold", alpha=0.18, label="matchday")
+    if kickoff is not None:
+        ko = pd.Timestamp(kickoff)
+        if ko.tz is not None:  # series index is tz-naive UTC
+            ko = ko.tz_convert(None)
+        ax.axvspan(ko, ko + pd.Timedelta(hours=2), color="gold", alpha=0.25, label="match time")
 
     ax.set_ylabel(f"{label} [{unit}]")
-    ax.set_title(f"{label} — IFS best estimate (solid) + 15-day forecast (dashed)", fontsize=11)
+    ax.set_title(f"{label} in {venue_city} — IFS best estimate (solid) + 15-day forecast (dashed)", fontsize=11)
     ax.legend(fontsize=8, loc="best", framealpha=0.9)
     ax.margins(x=0.01)
     return ax

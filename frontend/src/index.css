@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@import "maplibre-gl/dist/maplibre-gl.css";
+
+:root {
+  font-family: "Inter", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #0a0e16;
+  color: #e7ecf3;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* glass surface used by the card + chrome */
+.glass {
+  background: rgba(16, 22, 34, 0.72);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* thin scrollbar inside the card */
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+}
+
+/* MapLibre attribution toned down for the dark theme */
+.maplibregl-ctrl-attrib {
+  background: rgba(10, 14, 22, 0.6) !important;
+  color: #8a94a6 !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: #aab4c6 !important;
+}
