@@ -50,6 +50,12 @@ export default function App() {
     [pins],
   );
 
+  // t2m overlay follows the selected match; with none selected, the first of the day.
+  const overlayMap = useMemo(
+    () => (selId ? sortedPins.find((p) => p.id === selId) : sortedPins[0])?.t2m_map ?? null,
+    [selId, sortedPins],
+  );
+
   if (error)
     return (
       <div className="grid h-full place-items-center p-8 text-center text-slate-400">
@@ -63,7 +69,7 @@ export default function App() {
 
   return (
     <div className="relative h-dvh w-screen overflow-hidden">
-      <MapView pins={sortedPins} selectedId={selId} onSelect={setSelId} />
+      <MapView pins={sortedPins} selectedId={selId} onSelect={setSelId} overlayMap={overlayMap} />
 
       {/* Header */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-3 sm:p-4">
