@@ -14,6 +14,7 @@ venv
 .ipynb_checkpoints
 
 # data
+.cache/
 */*.nc
 */*.zarr
 *.nc
@@ -28,6 +29,7 @@ TODO.md
 # node / frontend
 node_modules/
 frontend/dist/
+frontend/.vite/
 
 # macOS files
 .DS_Store

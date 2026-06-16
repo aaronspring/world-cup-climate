@@ -11,6 +11,14 @@ the match window).
 Backend computations are recomputed every 6 hours, as each new IFS forecast
 cycle becomes available.
 
+> **Implemented (local app).** The recompute job (`backend/recompute.py
+> --source ifs`) extracts **only `t2m` and `d2m`** from the real IFS store, plus
+> the derived **heat index** — wind/precip/cloud/solar were dropped (no synthetic
+> fill). It also writes a downsampled **North-America `t2m` field** per match
+> timing, which the SPA paints as a map overlay (see §1). Heavy Arraylake pulls
+> are disk-cached per init cycle (`.cache/ifs/`), so reruns within a cycle are
+> instant.
+
 ---
 
 ## Data layer (Arraylake / `spring-data`)
@@ -69,7 +77,19 @@ Three serving primitives, each matched to a design decision:
 
 ---
 
-## 1. Serving layer — Flux tiles
+## 1. Serving layer — t2m field overlay
+
+**Implemented locally without a tiles service:** the recompute job extracts a
+downsampled (0.5°) `t2m` field over a North-America bbox at each match's kickoff
+valid-time (`ifs.na_t2m_fields`, two bulk `.load()`s — one forecast branch, one
+analysis branch — deduped by valid hour). It writes `t2m/{hour}.json`
+(`bounds` + `nx`/`ny` + row-major °C values). The SPA colorizes each field on a
+canvas with the **same `tempColor` colormap** as the pins/legend and adds it as a
+MapLibre **image source** under the pins. The overlay follows the selected match;
+with none selected it shows the day's first match.
+
+The Flux **tiles** path below remains the cloud option for a live, full-zoom
+raster (replace the precomputed field when deploying):
 
 - Deploy a Flux **tiles** compute service in `spring-data` over
   `ecwmf-ifs-15-days-forecast-open`, exposing `2t` (extensible later to `tp`,

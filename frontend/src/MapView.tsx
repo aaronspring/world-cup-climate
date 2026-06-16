@@ -1,7 +1,32 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import type { Pin } from "./types";
-import { tempColor } from "./colors";
+import { tempColor, tempRGB } from "./colors";
+
+interface Grid { bounds: [number, number, number, number]; nx: number; ny: number; values: (number | null)[] }
+
+// Colorize a t2m grid (row-major from NW) into a data-URL + image coordinates.
+async function loadOverlay(url: string) {
+  const g: Grid = await (await fetch(url)).json();
+  const [w, s, e, n] = g.bounds;
+  const cv = document.createElement("canvas");
+  cv.width = g.nx;
+  cv.height = g.ny;
+  const ctx = cv.getContext("2d")!;
+  const img = ctx.createImageData(g.nx, g.ny);
+  for (let i = 0; i < g.values.length; i++) {
+    const v = g.values[i];
+    const o = i * 4;
+    if (v == null) { img.data[o + 3] = 0; continue; } // masked/ocean -> transparent
+    const [r, gg, b] = tempRGB(v);
+    img.data[o] = r; img.data[o + 1] = gg; img.data[o + 2] = b; img.data[o + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  // image-source coordinates: TL, TR, BR, BL
+  const coordinates: [[number, number], [number, number], [number, number], [number, number]] =
+    [[w, n], [e, n], [e, s], [w, s]];
+  return { url: cv.toDataURL(), coordinates };
+}
 
 // Inline style: a background layer makes `load` fire instantly (so pins always
 // render), with CARTO dark raster tiles painted on top when the network is up.
@@ -53,18 +78,23 @@ function fitToPins(map: maplibregl.Map, pins: Pin[]) {
   map.fitBounds(b, { padding: pad, maxZoom: 6, duration: 600 });
 }
 
+const DATA_BASE = `${import.meta.env.BASE_URL}data`;
+
 export default function MapView({
   pins,
   selectedId,
   onSelect,
+  overlayMap,
 }: {
   pins: Pin[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  overlayMap: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const readyRef = useRef(false);
+  const [ready, setReady] = useState(false); // re-trigger data-driven effects once `load` fires
   const pinsRef = useRef(pins); // always-latest pins for the async `load` handler
   pinsRef.current = pins;
 
@@ -122,6 +152,7 @@ export default function MapView({
       });
 
       readyRef.current = true;
+      setReady(true);
       (map.getSource("pins") as maplibregl.GeoJSONSource)?.setData(features(pinsRef.current));
       fitToPins(map, pinsRef.current);
 
@@ -159,6 +190,34 @@ export default function MapView({
       "case", ["==", ["get", "id"], selectedId ?? "__none__"], 3.5, 2,
     ]);
   }, [selectedId]);
+
+  // t2m field overlay for the selected (or first) match's valid time.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    if (!overlayMap) {
+      if (map.getLayer("t2m")) map.setLayoutProperty("t2m", "visibility", "none");
+      return;
+    }
+    let alive = true;
+    loadOverlay(`${DATA_BASE}/${overlayMap}`).then(({ url, coordinates }) => {
+      if (!alive || !mapRef.current) return;
+      const src = map.getSource("t2m") as maplibregl.ImageSource | undefined;
+      if (src) {
+        src.updateImage({ url, coordinates });
+        map.setLayoutProperty("t2m", "visibility", "visible");
+      } else {
+        map.addSource("t2m", { type: "image", url, coordinates });
+        map.addLayer(
+          { id: "t2m", type: "raster", source: "t2m", paint: { "raster-opacity": 0.55 } },
+          "pin-glow",
+        );
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [overlayMap, ready]);
 
   // maplibre-gl.css forces `.maplibregl-map { position: relative }`, so size the
   // container explicitly with h/w-full rather than relying on `absolute inset-0`.

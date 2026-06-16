@@ -10,18 +10,20 @@ const STOPS: [number, [number, number, number]][] = [
   [44, [157, 23, 77]],   // deep magenta
 ];
 
-export function tempColor(t: number): string {
-  if (t <= STOPS[0][0]) return rgb(STOPS[0][1]);
+export function tempRGB(t: number): [number, number, number] {
+  if (t <= STOPS[0][0]) return STOPS[0][1];
   for (let i = 1; i < STOPS.length; i++) {
     if (t <= STOPS[i][0]) {
       const [t0, c0] = STOPS[i - 1];
       const [t1, c1] = STOPS[i];
       const f = (t - t0) / (t1 - t0);
-      return rgb([0, 1, 2].map((k) => Math.round(c0[k] + f * (c1[k] - c0[k]))) as number[]);
+      return [0, 1, 2].map((k) => Math.round(c0[k] + f * (c1[k] - c0[k]))) as [number, number, number];
     }
   }
-  return rgb(STOPS[STOPS.length - 1][1]);
+  return STOPS[STOPS.length - 1][1];
 }
+
+export const tempColor = (t: number): string => rgb(tempRGB(t));
 
 const rgb = (c: number[]) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 
