@@ -31,6 +31,9 @@ node_modules/
 frontend/dist/
 frontend/.vite/
 
+# generated overlay data (regenerated in CI via backend/recompute.py)
+frontend/public/data/
+
 # macOS files
 .DS_Store
 
