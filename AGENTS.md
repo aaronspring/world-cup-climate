@@ -57,6 +57,7 @@ meaningful exactly at `step=0`.
   - `viz_ifs.py`: Plotly match plots (`plot_match`)
   - `sports.py`: relative humidity and heat index (NOAA Rothfusz; xclim is the planned replacement)
   - `fixtures.py` / `locations.py`: load curated `data/fixtures.json` and `data/locations.json`
+    (schema and key contract in `docs/DATA_MODEL.md`; fixture sourcing in `docs/FIXTURES.md`)
   - `client.py`: low-latency subscription repo decoding (bare integer dims)
   - `config.py`: repo names, defaults
   - `era5.py` / `forecast.py` / `climate.py` / `viz.py`: earlier richer ERA5 + stitching

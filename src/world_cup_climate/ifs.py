@@ -28,9 +28,14 @@ VARS = ["2t", "2d"]  # instantaneous; valid at step 0
 
 @lru_cache(maxsize=1)
 def open_ifs() -> xr.Dataset:
+    import os
+
     from arraylake import Client
 
-    repo = Client().get_repo(IFS_OPEN_REPO)
+    # CACHE_ARRAYLAKE_TOKEN is the one with access to the open IFS repo;
+    # fall back to ARRAYLAKE_TOKEN / ~/.arraylake login if it's unset.
+    token = os.environ.get("CACHE_ARRAYLAKE_TOKEN") or os.environ.get("ARRAYLAKE_TOKEN")
+    repo = Client(token=token).get_repo(IFS_OPEN_REPO)
     return xr.open_zarr(repo.readonly_session("main").store, chunks={})
 
 
@@ -63,23 +68,24 @@ def location_series(lat: float, lon: float) -> pd.DataFrame:
     """
     ds = open_ifs()
     pt = ds[VARS].sel(latitude=lat, longitude=lon, method="nearest")
+    init = pd.Timestamp(ds["time"].values[-1])
 
-    # best estimate: step 0 at every init
+    # best estimate: step 0 at every init (6-hourly, valid_time == init time)
     analysis = pt.sel(step="0 days").load()
     a = _derive(analysis["2t"].values, analysis["2d"].values)
     a.index = pd.DatetimeIndex(analysis["time"].values, name="valid_time")
-    a["is_forecast"] = False
 
-    # forecast: latest init, all steps
+    # forecast: latest init, all steps (valid_time = time + step)
     fc = pt.isel(time=-1).load()
-    valid = pd.DatetimeIndex(fc["time"].values + fc["step"].values, name="valid_time")
     f = _derive(fc["2t"].values, fc["2d"].values)
-    f.index = valid
-    f["is_forecast"] = True
+    f.index = pd.DatetimeIndex(fc["time"].values + fc["step"].values, name="valid_time")
 
-    # join; forecast wins at the overlap (its step 0 == latest analysis point)
-    out = pd.concat([a[a.index < f.index[0]], f]).sort_index()
-    return out[~out.index.duplicated(keep="last")]
+    # past (step 0) up to the seam, then forecast; resample to a gap-free 1h grid.
+    # past is 6-hourly and the forecast coarsens to 3h/6h, so interpolate to 1h.
+    joined = pd.concat([a[a.index < init], f]).sort_index()
+    out = joined[~joined.index.duplicated(keep="last")].resample("1h").interpolate("time")
+    out["is_forecast"] = out.index >= init
+    return out
 
 
 def matchday_value(series: pd.DataFrame, matchday, col: str = "t2m_c") -> float:

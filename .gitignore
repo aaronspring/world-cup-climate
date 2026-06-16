@@ -13,8 +13,7 @@ venv
 # notebooks
 .ipynb_checkpoints
 
-#
-data
+# data
 */*.nc
 */*.zarr
 *.nc

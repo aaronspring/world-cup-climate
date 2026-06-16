@@ -30,8 +30,9 @@ def plot_match(places, col: str = "t2m_c", matchday=None, ax=None):
 
     for place, color in zip(places, COLORS):
         s = location_series(place.lat, place.lon)
-        obs = s[~s["is_forecast"]]
-        fc = s[s["is_forecast"]]
+        # share the seam point so solid and dashed connect (no gap at init)
+        obs = s[s.index <= init]
+        fc = s[s.index >= init]
         ax.plot(obs.index, obs[col], color=color, lw=2.4,
                 label=f"{place.name} ({place.label.split(' — ')[0]})")
         ax.plot(fc.index, fc[col], color=color, lw=2.0, ls=(0, (3, 2)), alpha=0.9)
