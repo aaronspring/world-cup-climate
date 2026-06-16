@@ -15,7 +15,8 @@ are exactly the fields that are meaningful at step 0.
 
 from __future__ import annotations
 
-from functools import lru_cache
+import time
+from functools import lru_cache, wraps
 
 import pandas as pd
 import xarray as xr
@@ -26,7 +27,21 @@ from .sports import heat_index_celsius, kelvin_to_celsius, relative_humidity
 VARS = ["2t", "2d"]  # instantaneous; valid at step 0
 
 
-@lru_cache(maxsize=1)
+def _ttl_cache(seconds: int, maxsize: int):
+    """lru_cache whose entries expire every `seconds` (IFS refreshes ~6h)."""
+    def deco(fn):
+        @lru_cache(maxsize=maxsize)
+        def cached(_bucket, *args):
+            return fn(*args)
+
+        @wraps(fn)
+        def inner(*args):
+            return cached(int(time.time() // seconds), *args)
+        return inner
+    return deco
+
+
+@_ttl_cache(3600, maxsize=2)
 def open_ifs() -> xr.Dataset:
     import os
 
@@ -58,7 +73,7 @@ def _derive(t2m_k, d2m_k) -> pd.DataFrame:
     return out
 
 
-@lru_cache(maxsize=256)
+@_ttl_cache(3600, maxsize=256)
 def location_series(lat: float, lon: float) -> pd.DataFrame:
     """Continuous best-estimate + 15-day forecast series at a point.
 

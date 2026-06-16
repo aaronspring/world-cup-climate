@@ -27,6 +27,8 @@ def plot_match(places, col: str = "t2m_c", kickoff=None, ax=None):
         _, ax = plt.subplots(figsize=(11, 4.6))
     label, unit = VAR_LABELS.get(col, (col, ""))
     init = latest_init()
+    places = list(places)
+    venue_city = places[0].label.split(" — ")[-1]  # "Match venue — {city}"
 
     for place, color in zip(places, COLORS):
         s = location_series(place.lat, place.lon)
@@ -46,7 +48,7 @@ def plot_match(places, col: str = "t2m_c", kickoff=None, ax=None):
         ax.axvspan(ko, ko + pd.Timedelta(hours=2), color="gold", alpha=0.25, label="match time")
 
     ax.set_ylabel(f"{label} [{unit}]")
-    ax.set_title(f"{label} — IFS best estimate (solid) + 15-day forecast (dashed)", fontsize=11)
+    ax.set_title(f"{label} in {venue_city} — IFS best estimate (solid) + 15-day forecast (dashed)", fontsize=11)
     ax.legend(fontsize=8, loc="best", framealpha=0.9)
     ax.margins(x=0.01)
     return ax
