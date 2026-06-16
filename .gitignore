@@ -25,6 +25,10 @@ venv
 
 TODO.md
 
+# node / frontend
+node_modules/
+frontend/dist/
+
 # macOS files
 .DS_Store
 
