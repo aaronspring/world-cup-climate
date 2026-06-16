@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch: # allow manual rebuilds (e.g. to pick up a fresh IFS init)
+  schedule:
+    # ~5 min after each long (00z/12z) IFS 15-day run lands in the store.
+    # Store SLA is 7h past synoptic (07:00/19:00 UTC); observed write-complete
+    # is ~07:25/19:13, so 07:30/19:30 reliably catches the fresh long init.
+    # GHA cron only ever fires late, which is fine here. recompute.py falls
+    # back to the prior complete long init if the newest isn't written yet.
+    - cron: "30 7,19 * * *"
 
 permissions:
   contents: read
