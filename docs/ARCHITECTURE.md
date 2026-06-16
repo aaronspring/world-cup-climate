@@ -4,8 +4,9 @@ A web app that shows ECMWF IFS weather forecasts for FIFA World Cup 2026 match
 locations across the USA, Canada, and Mexico. The start page is a date-pickable
 map of 2 m temperature (`t2m`) over North America with a pin on each stadium
 hosting a match that day. Clicking a pin opens a card with per-match timeseries
-and overview stats (time difference to each team's home, difference in mean
-`t2m` and `d2m` versus home).
+and overview stats (time difference to each team's home, and the difference in
+`t2m`, `d2m`, and heat index between the venue and each team's home city over
+the match window).
 
 Backend computations are recomputed every 6 hours, as each new IFS forecast
 cycle becomes available.
@@ -16,9 +17,11 @@ cycle becomes available.
 
 | Repo | Role |
 | --- | --- |
-| `spring-data/ecwmf-ifs-15-days-forecast-open` | Primary forecast source |
+| `spring-data/ecwmf-ifs-15-days-forecast-open` | Primary (and only) forecast source — global, so it covers both venues and every team's home city |
 | `spring-data/ecmwf-ifs-15-day-forecast-low-latency-subscription` | Optional fresher feed |
-| `spring-data/era5` | Climatological "home" baseline for the diff stats |
+
+Both the venue and the "home" baseline come from the **same global forecast
+store** over the same valid window — there is no separate climatology source.
 
 ### `ecwmf-ifs-15-days-forecast-open`
 
@@ -26,12 +29,16 @@ cycle becomes available.
 - `time` — forecast reference time, **6-hourly** init cycles (00/06/12/18z).
 - `step` — **hourly** lead times out to **15 days** (145 steps).
 - Data variables (subset relevant to this app):
-  - `2t` — 2 m temperature (K) → the map overlay (`t2m`).
-  - `2d` — 2 m dewpoint temperature (K) → the `d2m` stat.
+  - `2t` — 2 m temperature (K) → the map overlay (`t2m`) and stats.
+  - `2d` — 2 m dewpoint temperature (K) → `d2m`, plus relative humidity.
   - `10u` / `10v` — 10 m wind components (m s⁻¹) → wind speed.
   - `tp` / `cp` — total / convective precipitation (m).
   - `hcc` / `mcc` / `lcc` — high / medium / low cloud cover.
-  - `msl`, `ssrd`, `fdir`, `sd`, `100u`, `100v` — available, not in MVP.
+  - `ssrd` — surface solar radiation downward (J m⁻²) → sun load / UV proxy.
+  - `msl`, `fdir`, `sd`, `100u`, `100v` — available, not in MVP.
+- **Derived comfort variables** (computed in the recompute job from `2t` + `2d`):
+  relative humidity (Magnus) and NOAA heat index ("feels like") — the
+  sports-relevant heat-stress numbers. See `src/world_cup_climate/sports.py`.
 - Chunking: `[1 time, 1 step, 900 lat, 900 lon]` (~3.2 MB/chunk). **Implication:**
   a naive single-point timeseries over 145 steps pulls ~145 chunks (~470 MB).
   Point timeseries must therefore be **extracted server-side** (in the recompute
@@ -48,7 +55,8 @@ ECMWF IFS 15-day (spring-data, 6-hourly cycles)
    │     (live raster overlay)                             │
    │                                                       ▼
    └─► Recompute job (every 6h) ──► static match JSON ──► React + MapLibre SPA
-         • bbox-extract stadiums      (per cycle)           (static host)
+         • bbox-extract venues       (per cycle)           (static host)
+         • point-extract home cities
          • compute stats
          • write JSON + redeploy
 ```
@@ -80,27 +88,34 @@ Three serving primitives, each matched to a design decision:
 ## 2. Backend recompute job (every 6 h)
 
 Triggered when a new IFS cycle commit lands (poll the repo's latest `time`, or
-schedule at init + latency). Runs as a container or scheduled CI job.
+schedule at init + latency). Runs as a container or scheduled CI job. Reuses the
+existing `src/world_cup_climate/` modules (forecast point extraction, sports
+derived variables).
 
 Per run:
 
 1. Detect the latest `time` (forecast cycle).
-2. Load fixtures — stadiums, match schedule, and each team's home location /
-   timezone.
-3. **Efficient extraction:** subset *one* small North-America bbox
-   (≈ lon −125…−65, lat 14…60) across the needed steps once — touching only a
-   few of the 900×900 chunks — then pull each stadium point from it via
-   `.sel(method="nearest")`. This avoids the ~470 MB/match cost of naive
-   per-point reads.
-4. Build per-match **timeseries**: `2t`, `2d`, wind speed
-   (`√(10u² + 10v²)`), `tp`, cloud cover over the match-day window (with a
-   full 15-day toggle).
+2. Load fixtures from the bundled static files — `data/fixtures.json`
+   (schedule) and `data/locations.json` (venue + capital lat/lon). See
+   `docs/DATA_MODEL.md`. Team home timezone is derived from the capital
+   coordinates.
+3. **Efficient extraction:**
+   - **Venues:** subset *one* small North-America bbox (≈ lon −125…−65,
+     lat 14…60) across the needed steps once — touching only a few of the
+     900×900 chunks — then pull each stadium point via `.sel(method="nearest")`.
+   - **Home cities:** the capitals are global, so extract each as a single
+     nearest point over the match window only (a short step range, not the full
+     145), keeping the chunk count low. This is the same store, no ERA5.
+   This avoids the ~470 MB/match cost of naive full-length per-point reads.
+4. Build per-match **timeseries** over the match-day window (with a full 15-day
+   toggle): `2t`, `2d`, relative humidity, heat index, wind speed
+   (`√(10u² + 10v²)`), `tp`, cloud cover, `ssrd`.
 5. Compute **overview stats** per match:
    - **Time difference to home** (both teams) — stadium timezone vs each team's
      home timezone (timezone-database math).
-   - **Δ mean t2m vs home** and **Δ d2m vs home** (per team) — match-window mean
-     minus the team's **ERA5 climatological normal** at home. Normals are
-     computed once and cached as a lookup.
+   - **Δ vs home** (per team) for `t2m`, `d2m`, and heat index — the venue's
+     match-window mean minus the **same-window forecast mean at the team's home
+     city** (both from the IFS store). No climatological normal.
 6. Write compact JSON:
    - `cycles/latest.json` — cycle metadata + index of available dates.
    - `days/{date}.json` — pins for that date (lat/lon, teams, kickoff).
@@ -119,17 +134,17 @@ Per run:
   markers), clustered if dense.
 - **Click → card / drawer** (Framer Motion glass card over the map):
   - Match header (teams, stadium, local kickoff).
-  - Stat tiles: time-diff-to-home ×2, Δ mean `t2m`, Δ `d2m`.
-  - **Timeseries charts** (uPlot or Recharts) for t2m / dewpoint / wind /
-    precip / cloud.
+  - Stat tiles: time-diff-to-home ×2, Δ `t2m`, Δ `d2m`, Δ heat index vs home.
+  - **Timeseries charts** (uPlot or Recharts) for t2m / dewpoint / humidity /
+    heat index / wind / precip / cloud / solar.
 - Modern and fresh: glassmorphism, smooth transitions, responsive / mobile,
   with proper loading / empty / error states.
 
 ## 4. Shared data contract
 
 TypeScript types + JSON Schema for every precomputed file, so the frontend and
-the recompute job can be built in parallel against fixtures before live data is
-wired.
+the recompute job can be built in parallel against the existing fixtures before
+live data is wired.
 
 ---
 
@@ -137,9 +152,10 @@ wired.
 
 ```
 /frontend            # Vite React SPA
-/backend             # python: xarray + icechunk + arraylake + pandas
+/backend             # recompute job; reuses src/world_cup_climate (xarray + arraylake + pandas)
+/data                # bundled static fixtures.json + locations.json (already exist)
 /schemas             # shared JSON Schema + generated TS types
-/docs                # this document
+/docs                # this document + DATA_MODEL.md
 /.github/workflows   # 6h recompute cron + deploy
 ```
 
@@ -147,17 +163,15 @@ wired.
 
 | Phase | Deliverable |
 | --- | --- |
-| **P0** | Scaffold repo + data contract + sample fixture/match JSON (unblocks both sides). |
+| **P0** | Scaffold repo + data contract + sample match JSON from existing fixtures (unblocks both sides). |
 | **P1** | Deploy Flux `t2m` tiles service; verify XYZ render over NA in a MapLibre sandbox. |
-| **P2** | Recompute job: bbox extract + stats + JSON for the latest cycle; commit samples. |
+| **P2** | Recompute job: bbox/point extract + stats + JSON for the latest cycle; commit samples. |
 | **P3** | Frontend MVP wired to sample JSON: map + overlay + picker + pins + card + charts. |
 | **P4** | Automate: 6h cron recompute + redeploy; public tiles service for URL freshness. |
-| **P5** | Polish: design pass, ERA5 home baselines, mobile. |
+| **P5** | Polish: design pass, full variable set, mobile. |
 
 ## Open decisions
 
-- **Fixtures source** — schema/location for stadiums, schedule, and team home
-  locations/timezones.
 - **IFS feed** — open (simplest) vs. low-latency subscription (freshest) for the
   6 h cadence.
 - **Hosting** — static site + JSON target (Vercel / Cloudflare Pages / GitHub
