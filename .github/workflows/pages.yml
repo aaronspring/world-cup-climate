@@ -18,6 +18,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: GHA # holds the ARRAYLAKE_TOKEN secret used by recompute
     steps:
       - uses: actions/checkout@v4
 
