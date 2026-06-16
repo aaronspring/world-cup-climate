@@ -248,9 +248,12 @@ def main() -> None:
 
     matches = load_matches()
     map_keys: list[str | None] = [None] * len(matches)
+    forecast_init = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     if args.source == "ifs":
-        from world_cup_climate.ifs import latest_init, na_t2m_fields
-        log.info("IFS latest init cycle: %s", latest_init())
+        from world_cup_climate.ifs import latest_init, latest_long_init, na_t2m_fields
+        forecast_init = latest_long_init().tz_localize("UTC").to_pydatetime()
+        log.info("IFS latest init: %s · forecast from latest 15-day init: %s",
+                 latest_init(), forecast_init)
         series_fn = make_ifs_series_fn(matches)
         log.info("extracting North-America t2m fields for match timings...")
         t0 = time.perf_counter()
@@ -280,7 +283,7 @@ def main() -> None:
         write_json(args.out / "days" / f"{date}.json", {"date": date, "matches": pins})
 
     cycle = {
-        "cycle": datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0).isoformat(),
+        "cycle": forecast_init.isoformat(),
         "source": args.source,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "dates": sorted(by_date),

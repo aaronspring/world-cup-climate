@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from world_cup_climate.locations import Place
 from recompute import build_match, synth_series, utc_offset_hours, VARIABLES
 from world_cup_climate.fixtures import Match
+from world_cup_climate.ifs import _latest_long_idx, _PROBE_LATLON
 
 
 def _place(lat: float, lon: float) -> Place:
@@ -51,6 +53,22 @@ def test_build_match_shape():
     assert set(doc["stats"]["team_a"]) >= {"home", "tz_diff_h", "d_t2m", "d_heat_index"}
     # kickoff falls inside the series window
     assert doc["window"]["start"] <= doc["kickoff_utc"].replace("Z", "") <= doc["window"]["end"]
+
+
+def test_latest_long_idx_skips_short_and_unwritten_inits():
+    """Pick the latest 00z/12z init whose longest step is actually populated."""
+    times = pd.to_datetime([
+        "2026-06-16T00", "2026-06-16T06", "2026-06-16T12",  # 12z = newest long run
+    ])
+    lat, lon = _PROBE_LATLON
+    t2m = np.full((3, 2, 1, 1), 290.0)  # (time, step, lat, lon)
+    t2m[1, -1] = np.nan   # 06z is a short run -> no 15-day step (excluded by hour anyway)
+    t2m[2, -1] = np.nan   # 12z announced but its 15-day step isn't written yet
+    ds = xr.Dataset(
+        {"2t": (("time", "step", "latitude", "longitude"), t2m)},
+        coords={"time": times, "step": [0, 360], "latitude": [lat], "longitude": [lon]},
+    )
+    assert _latest_long_idx(ds) == 0  # falls back to the complete 00z run
 
 
 if __name__ == "__main__":

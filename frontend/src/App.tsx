@@ -158,6 +158,7 @@ export default function App() {
         variables={cycle?.variables ?? {}}
         varKey={varKey}
         setVarKey={setVarKey}
+        forecastStart={cycle?.cycle ?? null}
         onClose={() => setSelId(null)}
       />
     </div>

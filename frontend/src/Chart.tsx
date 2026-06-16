@@ -10,21 +10,19 @@ import {
 } from "recharts";
 import type { Match, VarMeta } from "./types";
 
-const fmtTick = (iso: string) => {
-  const d = new Date(iso);
-  return d.getUTCHours() === 0
-    ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
-    : `${String(d.getUTCHours()).padStart(2, "0")}h`;
-};
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 export default function Chart({
   match,
   varKey,
   meta,
+  forecastStart,
 }: {
   match: Match;
   varKey: string;
   meta: VarMeta;
+  forecastStart: string | null;
 }) {
   const { time, venue, team_a, team_b } = match.series;
   const data = time.map((t, i) => ({
@@ -34,10 +32,18 @@ export default function Chart({
     b: team_b[varKey][i],
   }));
   const kickoff = match.kickoff_utc;
+  // one tick per UTC midnight so the axis reads as dates, not repeated hours
+  const dayTicks = time.filter((t) => new Date(t).getUTCHours() === 0);
+  // snap the cycle time to the matching category value (ReferenceLine needs an exact match);
+  // null if the boundary falls outside this match's window
+  const fcMs = forecastStart != null ? Date.parse(forecastStart) : NaN;
+  const boundary =
+    time.find((t) => Date.parse(t) >= fcMs && Date.parse(t) > Date.parse(time[0])) ?? null;
+  const showBoundary = boundary != null && Date.parse(boundary) < Date.parse(time[time.length - 1]);
 
   return (
     <ResponsiveContainer width="100%" height={210}>
-      <ComposedChart data={data} margin={{ top: 8, right: 6, bottom: 0, left: -18 }}>
+      <ComposedChart data={data} margin={{ top: 8, right: 6, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="venueFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={meta.color} stopOpacity={0.28} />
@@ -46,18 +52,19 @@ export default function Chart({
         </defs>
         <XAxis
           dataKey="t"
-          tickFormatter={fmtTick}
-          minTickGap={36}
+          ticks={dayTicks}
+          tickFormatter={fmtDate}
           tick={{ fill: "#7c869a", fontSize: 10 }}
           axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
           tickLine={false}
         />
         <YAxis
-          width={44}
+          width={40}
+          domain={["auto", "auto"]}
+          tickFormatter={(v: number) => `${Math.round(v)}${meta.unit}`}
           tick={{ fill: "#7c869a", fontSize: 10 }}
           axisLine={false}
           tickLine={false}
-          unit={meta.unit.length <= 2 ? meta.unit : ""}
         />
         <Tooltip
           contentStyle={{
@@ -73,6 +80,14 @@ export default function Chart({
           }
           formatter={(v: number, name) => [`${v}${meta.unit}`, name]}
         />
+        {showBoundary && (
+          <ReferenceLine
+            x={boundary!}
+            stroke="#94a3b8"
+            strokeDasharray="2 4"
+            label={{ value: "forecast", fill: "#94a3b8", fontSize: 10, position: "insideTopLeft" }}
+          />
+        )}
         <ReferenceLine
           x={kickoff}
           stroke="#facc15"

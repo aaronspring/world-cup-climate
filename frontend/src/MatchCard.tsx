@@ -43,12 +43,14 @@ export default function MatchCard({
   variables,
   varKey,
   setVarKey,
+  forecastStart,
   onClose,
 }: {
   match: Match | null;
   variables: Record<string, VarMeta>;
   varKey: string;
   setVarKey: (k: string) => void;
+  forecastStart: string | null;
   onClose: () => void;
 }) {
   return (
@@ -130,7 +132,7 @@ export default function MatchCard({
               <div className="mb-1 px-1 text-xs text-slate-400">
                 {variables[varKey].label} ({variables[varKey].unit}) · venue (solid) vs home cities (dashed)
               </div>
-              <Chart match={match} varKey={varKey} meta={variables[varKey]} />
+              <Chart match={match} varKey={varKey} meta={variables[varKey]} forecastStart={forecastStart} />
             </div>
           </div>
         </motion.aside>

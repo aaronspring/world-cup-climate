@@ -89,6 +89,37 @@ def latest_init() -> pd.Timestamp:
     return pd.Timestamp(open_ifs()["time"].values[-1])
 
 
+# A land point that always carries a valid 2t value; used to probe whether an
+# init's longest step is actually populated.
+_PROBE_LATLON = (48.85, 2.35)  # Paris
+
+
+def _latest_long_idx(ds: xr.Dataset) -> int:
+    """Index of the latest init whose full 15-day forecast is actually populated.
+
+    Two gates, both verified against the store:
+    - ECMWF open data publishes all 145 steps (out to 15 days) only for the 00z
+      and 12z runs; the 06z/18z runs stop at 144h, leaving the longer steps NaN.
+    - A freshly announced init can appear on the `time` axis before its data is
+      written, so we also require the longest step to be non-NaN at a land probe
+      point and walk back to the most recent complete long run.
+    """
+    times = pd.DatetimeIndex(ds["time"].values)
+    longs = np.where((times.hour == 0) | (times.hour == 12))[0]
+    probe = ds["2t"].isel(step=-1).sel(
+        latitude=_PROBE_LATLON[0], longitude=_PROBE_LATLON[1], method="nearest"
+    )
+    for i in longs[::-1]:
+        if np.isfinite(probe.isel(time=int(i)).load().values):
+            return int(i)
+    raise RuntimeError("no complete 15-day IFS init found")
+
+
+def latest_long_init() -> pd.Timestamp:
+    ds = open_ifs()
+    return pd.Timestamp(ds["time"].values[_latest_long_idx(ds)])
+
+
 def _derive(t2m_k, d2m_k) -> pd.DataFrame:
     t2m_c = kelvin_to_celsius(t2m_k)
     d2m_c = kelvin_to_celsius(d2m_k)
@@ -126,9 +157,10 @@ def location_series(lat: float, lon: float) -> pd.DataFrame:
     """Continuous best-estimate + 15-day forecast series at a single point."""
     ds = open_ifs()
     pt = ds[VARS].sel(latitude=lat, longitude=lon, method="nearest")
-    init = pd.Timestamp(ds["time"].values[-1])
+    init_idx = _latest_long_idx(ds)
+    init = pd.Timestamp(ds["time"].values[init_idx])
     analysis = pt.sel(step="0 days").load()      # step 0 at every init (6-hourly)
-    fc = pt.isel(time=-1).load()                 # latest init, all steps
+    fc = pt.isel(time=init_idx).load()           # latest 15-day init, all steps
     return _assemble(
         analysis["2t"].values, analysis["2d"].values, analysis["time"].values,
         fc["2t"].values, fc["2d"].values, fc["time"].values + fc["step"].values, init,
@@ -150,10 +182,11 @@ def extract_points(latlons: list[tuple[float, float]]) -> list[pd.DataFrame]:
     lat = xr.DataArray([la for la, _ in latlons], dims="pt")
     lon = xr.DataArray([lo for _, lo in latlons], dims="pt")
     sel = ds[VARS].sel(latitude=lat, longitude=lon, method="nearest")
-    init = pd.Timestamp(ds["time"].values[-1])
+    init_idx = _latest_long_idx(ds)
+    init = pd.Timestamp(ds["time"].values[init_idx])
 
     analysis = sel.sel(step="0 days").load()     # dims (time, pt)
-    fc = sel.isel(time=-1).load()                # dims (step, pt)
+    fc = sel.isel(time=init_idx).load()          # dims (step, pt)
     a_time = analysis["time"].values
     f_valid = fc["time"].values + fc["step"].values
     return [
@@ -178,7 +211,8 @@ def na_t2m_fields(valid_times: list) -> tuple[dict[str, list[float]], dict, list
     ``keys[i]`` is the hour key serving ``valid_times[i]``.
     """
     ds = open_ifs()
-    init = pd.Timestamp(ds["time"].values[-1])
+    init_idx = _latest_long_idx(ds)
+    init = pd.Timestamp(ds["time"].values[init_idx])
     da = ds["2t"]
     lat, lon = da["latitude"].values, da["longitude"].values
     w, s, e, n = NA_BBOX
@@ -213,7 +247,7 @@ def na_t2m_fields(valid_times: list) -> tuple[dict[str, list[float]], dict, list
             fields[k] = block[p].ravel().tolist()
 
     if fc_need:
-        harvest(sub.isel(time=-1).isel(step=sorted(fc_need)), fc_need)
+        harvest(sub.isel(time=init_idx).isel(step=sorted(fc_need)), fc_need)
     if an_need:
         harvest(sub.sel(step="0 days").isel(time=sorted(an_need)), an_need)
     return fields, meta, keys
