@@ -152,7 +152,13 @@ def make_ifs_series_fn(matches: list[Match]):
 
     def series_fn(place: Place, times: pd.DatetimeIndex) -> dict[str, np.ndarray]:
         df = dfs[_pkey(place)]
-        reindexed = df.select_dtypes(include="number").reindex(times).interpolate("time")
+        # limit_area="inside": fill only gaps *between* observations, never
+        # extrapolate the ends — a short 06/18z run must not flat-line a fake tail.
+        reindexed = (
+            df.select_dtypes(include="number")
+            .reindex(times)
+            .interpolate("time", limit_area="inside")
+        )
         n = len(times)
         out: dict[str, np.ndarray] = {}
         for var_key, col in _IFS_COL_MAP.items():

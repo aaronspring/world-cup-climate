@@ -75,6 +75,22 @@ def test_latest_init_idx_takes_newest_written_any_cycle():
     assert _latest_init_idx(ds) == 2  # newest written init = the short 18z run
 
 
+def test_series_reindex_does_not_extrapolate_short_run():
+    """A short run's series must not flat-line a fake tail past its last step.
+
+    Mirrors make_ifs_series_fn's reindex+interpolate: gaps between observations
+    fill, but trailing hours past the data horizon stay NaN.
+    """
+    df = pd.DataFrame(
+        {"t2m_c": [20.0, np.nan, 22.0]},
+        index=pd.to_datetime(["2026-06-20T14", "2026-06-20T15", "2026-06-20T16"]),
+    )
+    times = pd.date_range("2026-06-20T14", "2026-06-20T20", freq="1h")
+    out = df.reindex(times).interpolate("time", limit_area="inside")["t2m_c"]
+    assert out.loc["2026-06-20T15"] == 21.0          # interior gap filled
+    assert out.loc["2026-06-20T17":].isna().all()    # tail past horizon stays NaN
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
