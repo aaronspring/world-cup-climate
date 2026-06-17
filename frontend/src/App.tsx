@@ -87,7 +87,7 @@ export default function App() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline decoration-slate-600 hover:text-slate-200"
-                title="ECMWF IFS — the European Centre for Medium-Range Weather Forecasts global model. Updated every 12 hours (00 & 12 UTC). Free open dataset via Earthmover Arraylake."
+                title="ECMWF IFS — the European Centre for Medium-Range Weather Forecasts global model. Updated every 6 hours (00, 06, 12, 18 UTC). Free open dataset via Earthmover Arraylake."
               >
                 {t.ecmwf}
               </a>

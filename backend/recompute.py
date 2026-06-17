@@ -289,9 +289,9 @@ def main() -> None:
     map_keys: list[str | None] = [None] * len(matches)
     forecast_init = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     if args.source == "ifs":
-        from world_cup_climate.ifs import latest_init, latest_long_init, na_t2m_fields
-        forecast_init = latest_long_init().tz_localize("UTC").to_pydatetime()
-        log.info("IFS latest init: %s · forecast from latest 15-day init: %s",
+        from world_cup_climate.ifs import latest_init, latest_forecast_init, na_t2m_fields
+        forecast_init = latest_forecast_init().tz_localize("UTC").to_pydatetime()
+        log.info("IFS latest init: %s · forecast from latest written init: %s",
                  latest_init(), forecast_init)
         series_fn = make_ifs_series_fn(matches)
         log.info("extracting North-America t2m fields for match timings...")

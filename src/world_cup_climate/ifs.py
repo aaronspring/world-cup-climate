@@ -103,34 +103,32 @@ def latest_init() -> pd.Timestamp:
 
 
 # A land point that always carries a valid 2t value; used to probe whether an
-# init's longest step is actually populated.
+# init's data is actually populated.
 _PROBE_LATLON = (48.85, 2.35)  # Paris
 
 
-def _latest_long_idx(ds: xr.Dataset) -> int:
-    """Index of the latest init whose full 15-day forecast is actually populated.
+def _latest_init_idx(ds: xr.Dataset) -> int:
+    """Index of the most recent init whose data is actually written.
 
-    Two gates, both verified against the store:
-    - ECMWF open data publishes all 145 steps (out to 15 days) only for the 00z
-      and 12z runs; the 06z/18z runs stop at 144h, leaving the longer steps NaN.
-    - A freshly announced init can appear on the `time` axis before its data is
-      written, so we also require the longest step to be non-NaN at a land probe
-      point and walk back to the most recent complete long run.
+    We take whatever cycle is newest (00/06/12/18z), not just the long 00z/12z
+    runs: the shorter 06z/18z runs simply stop at 144h, and their NaN-tail steps
+    are dropped downstream (`_assemble`, and nulled in the NA overlay). A freshly
+    announced init can appear on the `time` axis before its data is written, so
+    we require step 0 to be non-NaN at a land probe point and walk back to the
+    most recent populated run.
     """
-    times = pd.DatetimeIndex(ds["time"].values)
-    longs = np.where((times.hour == 0) | (times.hour == 12))[0]
-    probe = ds["2t"].isel(step=-1).sel(
+    probe = ds["2t"].isel(step=0).sel(
         latitude=_PROBE_LATLON[0], longitude=_PROBE_LATLON[1], method="nearest"
     )
-    for i in longs[::-1]:
-        if np.isfinite(probe.isel(time=int(i)).load().values):
-            return int(i)
-    raise RuntimeError("no complete 15-day IFS init found")
+    for i in range(ds.sizes["time"] - 1, -1, -1):
+        if np.isfinite(probe.isel(time=i).load().values):
+            return i
+    raise RuntimeError("no populated IFS init found")
 
 
-def latest_long_init() -> pd.Timestamp:
+def latest_forecast_init() -> pd.Timestamp:
     ds = open_ifs()
-    return pd.Timestamp(ds["time"].values[_latest_long_idx(ds)])
+    return pd.Timestamp(ds["time"].values[_latest_init_idx(ds)])
 
 
 def _deaccumulate_ssrd(ssrd_accumulated, steps_timedelta) -> np.ndarray:
@@ -200,6 +198,7 @@ def _assemble(
     a.index = pd.DatetimeIndex(a_time, name="valid_time")
     f = _derive(f2t, f2d, f_u10, f_v10, f_ssrd_wm2)
     f.index = pd.DatetimeIndex(f_valid, name="valid_time")
+    f = f[f["t2m_c"].notna()]  # shorter 06/18z runs stop at 144h: drop the NaN-tail steps
     joined = pd.concat([a[a.index < init], f]).sort_index()
     out = joined[~joined.index.duplicated(keep="last")].resample("1h").interpolate("time")
     out["is_forecast"] = out.index >= init
@@ -211,7 +210,7 @@ def location_series(lat: float, lon: float) -> pd.DataFrame:
     """Continuous best-estimate + 15-day forecast series at a single point."""
     ds = open_ifs()
     pt = ds[VARS].sel(latitude=lat, longitude=lon, method="nearest")
-    init_idx = _latest_long_idx(ds)
+    init_idx = _latest_init_idx(ds)
     init = pd.Timestamp(ds["time"].values[init_idx])
     analysis = pt.sel(step="0 days").load()      # step 0 at every init (6-hourly)
     fc = pt.isel(time=init_idx).load()           # latest 15-day init, all steps
@@ -240,7 +239,7 @@ def extract_points(latlons: list[tuple[float, float]]) -> list[pd.DataFrame]:
     lat = xr.DataArray([la for la, _ in latlons], dims="pt")
     lon = xr.DataArray([lo for _, lo in latlons], dims="pt")
     sel = ds[VARS].sel(latitude=lat, longitude=lon, method="nearest")
-    init_idx = _latest_long_idx(ds)
+    init_idx = _latest_init_idx(ds)
     init = pd.Timestamp(ds["time"].values[init_idx])
 
     analysis = sel.sel(step="0 days").load()     # dims (time, pt)
@@ -273,7 +272,7 @@ def na_t2m_fields(valid_times: list) -> tuple[dict[str, list[float]], dict, list
     ``keys[i]`` is the hour key serving ``valid_times[i]``.
     """
     ds = open_ifs()
-    init_idx = _latest_long_idx(ds)
+    init_idx = _latest_init_idx(ds)
     init = pd.Timestamp(ds["time"].values[init_idx])
     da = ds["2t"]
     lat, lon = da["latitude"].values, da["longitude"].values
