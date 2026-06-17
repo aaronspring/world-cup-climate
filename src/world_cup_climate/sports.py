@@ -95,9 +95,10 @@ def _estimate_mrt(t2m_c, wind_speed_ms, ssrd_wm2=None):
 def utci_celsius(t2m_c, rh, wind_speed_ms, ssrd_wm2=None):
     """Universal Thermal Climate Index (°C) via xclim.indices.universal_thermal_climate_index.
 
-    The IOC-endorsed gold standard for outdoor thermal stress. Combines dry-bulb
-    temperature, humidity, wind, and mean radiant temperature (MRT). When ssrd is
-    available, MRT is estimated from solar load and wind; otherwise shade is assumed.
+    The most comprehensive outdoor thermal-stress index (ISB / COST Action 730).
+    Combines dry-bulb temperature, humidity, wind, and mean radiant temperature
+    (MRT). When ssrd is available, MRT is estimated from solar load and wind;
+    otherwise shade is assumed.
     """
     from xclim.indices import universal_thermal_climate_index
     mrt_c = _estimate_mrt(t2m_c, wind_speed_ms, ssrd_wm2)
@@ -123,10 +124,9 @@ def wbgt_celsius(t2m_c, rh, wind_speed_ms, ssrd_wm2=None):
     NWB estimated via Stull (2011); GT estimated via Malchaire et al. (2001).
     Accurate to roughly ±1°C under typical summer conditions.
 
-    FIFA cooling-break protocol:
-      < 28°C  normal play
-      28–32°C cooling/water breaks may be authorised
-      > 32°C  breaks mandatory under IFAB laws
+    FIFA cooling-break protocol (2014–2025): mandatory cooling breaks above
+    32°C WBGT. FIFPRO recommends breaks from 28°C and rescheduling above 32°C.
+    For 2026, FIFA made breaks mandatory in every match regardless of WBGT.
     """
     t2m = np.asarray(t2m_c, dtype=float)
     rh_ = np.asarray(rh, dtype=float)

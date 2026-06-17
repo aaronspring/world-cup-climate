@@ -9,18 +9,20 @@ import {
   YAxis,
 } from "recharts";
 import type { Match, VarMeta } from "./types";
+import { useLang } from "./LangContext";
+import { T, LOCALE } from "./i18n";
 
-const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const fmtDate = (iso: string, locale: string) =>
+  new Date(iso).toLocaleDateString(locale, { month: "short", day: "numeric", timeZone: "UTC" });
 
 // Category thresholds per variable — y value (in the variable's unit) and the
-// short label drawn at the right edge. Wording matches the tooltips in MatchCard.
-const THRESHOLDS: Record<string, { y: number; label: string }[]> = {
-  humidex:    [{ y: 30, label: "discomfort" }, { y: 40, label: "dangerous" }, { y: 45, label: "stop exercise" }],
-  utci:       [{ y: 26, label: "moderate heat" }, { y: 32, label: "strong heat" }, { y: 38, label: "very strong" }],
-  wbgt:       [{ y: 28, label: "breaks possible" }, { y: 32, label: "breaks mandatory" }],
-  wind_speed: [{ y: 5,  label: "breeze" }, { y: 10, label: "windy" }, { y: 15, label: "strong" }],
-  d2m:        [{ y: 20, label: "muggy" }, { y: 25, label: "tropical" }],
+// translation key for the short label drawn at the right edge (see i18n chart.thresholds).
+const THRESHOLDS: Record<string, { y: number; key: string }[]> = {
+  humidex:    [{ y: 30, key: "discomfort" }, { y: 40, key: "dangerous" }, { y: 45, key: "stopExercise" }],
+  utci:       [{ y: 26, key: "moderateHeat" }, { y: 32, key: "strongHeat" }, { y: 38, key: "veryStrong" }],
+  wbgt:       [{ y: 28, key: "fifproLimit" }, { y: 32, key: "fifaMandatory" }],
+  wind_speed: [{ y: 5,  key: "breeze" }, { y: 10, key: "windy" }, { y: 15, key: "strong" }],
+  d2m:        [{ y: 20, key: "muggy" }, { y: 25, key: "tropical" }],
 };
 
 export default function Chart({
@@ -34,6 +36,10 @@ export default function Chart({
   meta: VarMeta;
   forecastStart: string | null;
 }) {
+  const [lang] = useLang();
+  const t = T[lang];
+  const thLabels = t.chart.thresholds;
+  const locale = LOCALE[lang];
   const { time, venue, team_a, team_b } = match.series;
   const data = time.map((t, i) => ({
     t,
@@ -63,7 +69,7 @@ export default function Chart({
         <XAxis
           dataKey="t"
           ticks={dayTicks}
-          tickFormatter={fmtDate}
+          tickFormatter={(iso) => fmtDate(iso, locale)}
           tick={{ fill: "#7c869a", fontSize: 10 }}
           axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
           tickLine={false}
@@ -83,8 +89,8 @@ export default function Chart({
             borderRadius: 12,
             fontSize: 12,
           }}
-          labelFormatter={(t) =>
-            new Date(t as string).toLocaleString("en-US", {
+          labelFormatter={(ts) =>
+            new Date(ts as string).toLocaleString(locale, {
               month: "short", day: "numeric", hour: "2-digit", timeZone: "UTC",
             }) + " UTC"
           }
@@ -95,14 +101,14 @@ export default function Chart({
             x={boundary!}
             stroke="#94a3b8"
             strokeDasharray="2 4"
-            label={{ value: "forecast", fill: "#94a3b8", fontSize: 10, position: "insideTopLeft" }}
+            label={{ value: t.forecast, fill: "#94a3b8", fontSize: 10, position: "insideTopLeft" }}
           />
         )}
         <ReferenceLine
           x={kickoff}
           stroke="#facc15"
           strokeDasharray="4 3"
-          label={{ value: "kickoff", fill: "#facc15", fontSize: 10, position: "insideTopRight" }}
+          label={{ value: t.kickoff, fill: "#facc15", fontSize: 10, position: "insideTopRight" }}
         />
         {(THRESHOLDS[varKey] ?? []).map((t) => (
           <ReferenceLine key={t.y} y={t.y} stroke="rgba(255,255,255,0.18)" strokeDasharray="3 3" />
@@ -117,11 +123,11 @@ export default function Chart({
               key={`${t.y}-label`}
               y={labelY}
               stroke="none"
-              label={{ value: t.label, position: "insideRight", fill: "#7c869a", fontSize: 9 }}
+              label={{ value: thLabels[t.key] ?? t.key, position: "insideRight", fill: "#7c869a", fontSize: 9 }}
             />
           );
         })}
-        <Area type="monotone" dataKey="venue" name="Venue" stroke={meta.color} strokeWidth={2.4} fill="url(#venueFill)" dot={false} />
+        <Area type="monotone" dataKey="venue" name={t.chart.venue} stroke={meta.color} strokeWidth={2.4} fill="url(#venueFill)" dot={false} />
         <Line type="monotone" dataKey="a" name={match.stats.team_a.home} stroke="#38bdf8" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />
         <Line type="monotone" dataKey="b" name={match.stats.team_b.home} stroke="#c084fc" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />
       </ComposedChart>
