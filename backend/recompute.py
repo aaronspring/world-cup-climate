@@ -51,11 +51,11 @@ OUT_DIR = PROJECT_DIR / "frontend" / "public" / "data"
 # Variables carried in every per-place timeseries (canonical key -> label/unit/color).
 VARIABLES = {
     "t2m":          {"label": "Temperature",    "unit": "°C",  "color": "#f97316"},
+    "d2m":          {"label": "Dewpoint",       "unit": "°C",  "color": "#22d3ee"},
     "heat_index":   {"label": "Feels like",     "unit": "°C",  "color": "#ef4444"},
     "humidex":      {"label": "Humidex",        "unit": "°C",  "color": "#fb923c"},
     "utci":          {"label": "UTCI",           "unit": "°C",  "color": "#a78bfa"},
     "wbgt":         {"label": "WBGT",           "unit": "°C",  "color": "#f43f5e"},
-    "d2m":          {"label": "Dewpoint",       "unit": "°C",  "color": "#22d3ee"},
     "wind_speed":   {"label": "Wind speed",     "unit": "m/s", "color": "#94a3b8"},
 }
 

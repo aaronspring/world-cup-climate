@@ -105,14 +105,22 @@ export default function Chart({
           label={{ value: "kickoff", fill: "#facc15", fontSize: 10, position: "insideTopRight" }}
         />
         {(THRESHOLDS[varKey] ?? []).map((t) => (
-          <ReferenceLine
-            key={t.y}
-            y={t.y}
-            stroke="rgba(255,255,255,0.18)"
-            strokeDasharray="3 3"
-            label={{ value: t.label, position: "right", fill: "#7c869a", fontSize: 9 }}
-          />
+          <ReferenceLine key={t.y} y={t.y} stroke="rgba(255,255,255,0.18)" strokeDasharray="3 3" />
         ))}
+        {(THRESHOLDS[varKey] ?? []).map((t, i, arr) => {
+          // place the label centred in the band above this line (top band: offset up)
+          const next = arr[i + 1]?.y;
+          const prev = arr[i - 1]?.y;
+          const labelY = next != null ? (t.y + next) / 2 : t.y + (t.y - (prev ?? t.y)) / 2;
+          return (
+            <ReferenceLine
+              key={`${t.y}-label`}
+              y={labelY}
+              stroke="none"
+              label={{ value: t.label, position: "right", fill: "#7c869a", fontSize: 9 }}
+            />
+          );
+        })}
         <Area type="monotone" dataKey="venue" name="Venue" stroke={meta.color} strokeWidth={2.4} fill="url(#venueFill)" dot={false} />
         <Line type="monotone" dataKey="a" name={match.stats.team_a.home} stroke="#38bdf8" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />
         <Line type="monotone" dataKey="b" name={match.stats.team_b.home} stroke="#c084fc" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />
