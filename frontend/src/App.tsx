@@ -78,7 +78,16 @@ export default function App() {
           <div className="leading-tight">
             <div className="font-extrabold tracking-tight">World Cup 2026 · Match Climate</div>
             <div className="text-[11px] text-slate-400">
-              ECMWF forecast {cycle ? `· cycle ${cycle.cycle.slice(0, 13)}h` : ""}
+              <a
+                href="https://app.earthmover.io/marketplace/6971be98fc964a0d0fb66e04"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-slate-600 hover:text-slate-200"
+                title="ECMWF IFS — the European Centre for Medium-Range Weather Forecasts global model. Updated every 12 hours (00 & 12 UTC). Free open dataset via Earthmover Arraylake."
+              >
+                ECMWF forecast
+              </a>
+              {cycle ? ` · cycle ${cycle.cycle.slice(0, 13)}h` : ""}
               {cycle?.source === "demo" ? " · demo data" : ""}
             </div>
           </div>

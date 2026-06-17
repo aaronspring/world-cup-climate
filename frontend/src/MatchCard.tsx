@@ -21,17 +21,23 @@ function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
         </div>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
-        <Stat label="Δ temp" value={`${sign(stat.d_t2m)}°`} cls={deltaColor(stat.d_t2m)} />
-        <Stat label="Δ feels" value={`${sign(stat.d_heat_index)}°`} cls={deltaColor(stat.d_heat_index)} />
+        <Stat label="Δ temp" value={`${sign(stat.d_t2m)}°`} cls={deltaColor(stat.d_t2m)} tip="Air temperature difference: home city vs. venue around kickoff. Orange = hotter at home, blue = cooler." />
+        <Stat label="Δ feels" value={`${sign(stat.d_heat_index)}°`} cls={deltaColor(stat.d_heat_index)} tip="Heat-index difference: accounts for humidity — how much hotter or cooler it feels at home vs. the venue." />
         <Stat label="body clock" value={tz === "same time" ? "0h" : `${sign(stat.tz_diff_h)}h`} cls="text-violet-300" />
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, cls }: { label: string; value: string; cls: string }) {
+const VAR_TIPS: Record<string, string> = {
+  t2m: "Air temperature 2 m above ground (°C)",
+  heat_index: "Feels like — combines air temperature and humidity to estimate perceived heat stress",
+  d2m: "Dewpoint — the temperature at which air becomes saturated; higher dewpoint = more humid and muggy",
+};
+
+function Stat({ label, value, cls, tip }: { label: string; value: string; cls: string; tip?: string }) {
   return (
-    <div className="rounded-xl bg-black/20 px-1 py-2">
+    <div className="rounded-xl bg-black/20 px-1 py-2" title={tip}>
       <div className={`text-lg font-bold tabular-nums ${cls}`}>{value}</div>
       <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
     </div>
@@ -92,7 +98,7 @@ export default function MatchCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4" title="Heat index at kickoff — combines air temperature and humidity to show how hot it actually feels to players on the pitch. Above 32°C is considered stressful for athletes.">
             <div
               className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-black"
               style={{ background: tempColor(match.heat_index_at_kickoff) }}
@@ -118,6 +124,7 @@ export default function MatchCard({
                 <button
                   key={k}
                   onClick={() => setVarKey(k)}
+                  title={VAR_TIPS[k]}
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
                     k === varKey
                       ? "bg-white text-slate-900"
