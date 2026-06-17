@@ -15,7 +15,7 @@ Two data backends:
                     Slower, needs Arraylake auth.
 
 Both backends carry the same variable set: t2m, d2m, heat_index (from 2t/2d),
-humidex (from 2t/2d), plus wind_speed, wind_chill, apparent_temp, and wbgt
+humidex (from 2t/2d), plus wind_speed, apparent_temp, and wbgt
 when wind and solar data are available.
 """
 
@@ -44,7 +44,6 @@ from world_cup_climate.sports import (
     relative_humidity,
     utci_celsius,
     wbgt_celsius,
-    wind_chill_celsius,
 )
 
 OUT_DIR = PROJECT_DIR / "frontend" / "public" / "data"
@@ -54,7 +53,6 @@ VARIABLES = {
     "t2m":          {"label": "Temperature",    "unit": "°C",  "color": "#f97316"},
     "heat_index":   {"label": "Feels like",     "unit": "°C",  "color": "#ef4444"},
     "humidex":      {"label": "Humidex",        "unit": "°C",  "color": "#fb923c"},
-    "wind_chill":   {"label": "Wind chill",     "unit": "°C",  "color": "#38bdf8"},
     "utci":          {"label": "UTCI",           "unit": "°C",  "color": "#a78bfa"},
     "wbgt":         {"label": "WBGT",           "unit": "°C",  "color": "#f43f5e"},
     "d2m":          {"label": "Dewpoint",       "unit": "°C",  "color": "#22d3ee"},
@@ -113,7 +111,6 @@ def synth_series(place: Place, times: pd.DatetimeIndex) -> dict[str, np.ndarray]
         "t2m":          t2m,
         "heat_index":   np.asarray(heat_index_celsius(t2m, rh),                          dtype=float),
         "humidex":      np.asarray(humidex_celsius(t2m, d2m),                  dtype=float),
-        "wind_chill":   np.asarray(wind_chill_celsius(t2m, wind_ms),          dtype=float),
         "utci":         np.asarray(utci_celsius(t2m, rh, wind_ms, ssrd_wm2),  dtype=float),
         "wbgt":         np.asarray(wbgt_celsius(t2m, rh, wind_ms, ssrd_wm2),  dtype=float),
         "d2m":          d2m,
@@ -130,7 +127,6 @@ _IFS_COL_MAP = {
     "t2m":        "t2m_c",
     "heat_index": "heat_index_c",
     "humidex":    "humidex_c",
-    "wind_chill": "wind_chill_c",
     "utci":       "utci_c",
     "wbgt":       "wbgt_c",
     "d2m":        "d2m_c",

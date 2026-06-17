@@ -67,10 +67,6 @@ const VAR_INFO: Record<string, TooltipInfo> = {
     text: "Environment Canada's official heat-stress scale. Above 40 is dangerous for exercise; above 45 all physical exertion should stop.",
     href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.humidex",
   },
-  wind_chill: {
-    text: "How cold it feels when the wind is blowing. Only valid below ~10°C — a 6°C Vancouver morning with strong wind can feel like −1°C. Shows NaN in warm conditions.",
-    href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.wind_chill_index",
-  },
   utci: {
     text: "Universal Thermal Climate Index (IOC standard for Olympic Games planning). The most comprehensive outdoor comfort index — combines temperature, humidity, wind, and solar radiation. Negative = cold stress; above 26 = heat stress; above 38 = very strong heat stress.",
     href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.universal_thermal_climate_index",

@@ -36,7 +36,6 @@ from .sports import (
     relative_humidity,
     utci_celsius,
     wbgt_celsius,
-    wind_chill_celsius,
 )
 
 # Instantaneous fields + accumulated solar radiation.
@@ -169,7 +168,6 @@ def _derive(
     if u10 is not None and v10 is not None:
         wind_ms = np.sqrt(np.asarray(u10, dtype=float) ** 2 + np.asarray(v10, dtype=float) ** 2)
         out["wind_ms"] = wind_ms
-        out["wind_chill_c"] = wind_chill_celsius(t2m_c, wind_ms)
         out["utci_c"] = utci_celsius(t2m_c, rh, wind_ms, ssrd_wm2)
         out["wbgt_c"] = wbgt_celsius(t2m_c, rh, wind_ms, ssrd_wm2)
         if ssrd_wm2 is not None:
@@ -187,7 +185,7 @@ def _assemble(
     """Join one point's step-0 analysis history + latest-init forecast → 1h series.
 
     Columns: t2m_c, d2m_c, rh, heat_index_c, humidex_c, and (when wind/solar
-    are available) wind_ms, wind_chill_c, apparent_temp_c, ssrd_wm2, wbgt_c,
+    are available) wind_ms, utci_c, ssrd_wm2, wbgt_c,
     plus boolean `is_forecast`.
     Index: valid_time (UTC). Past is 6-hourly, the forecast coarsens to 3h/6h,
     so we resample to a gap-free 1h grid.

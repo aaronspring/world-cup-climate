@@ -6,9 +6,8 @@ Raw ERA5/IFS units:
   ssrd     : J m-2 (accumulation)
 
 We convert to athlete-friendly units and add a suite of heat-stress and
-thermal-comfort indices. Three indices are computed via xclim:
+thermal-comfort indices. Two indices are computed via xclim:
   - humidex          xclim.indices.humidex
-  - wind_chill       xclim.indices.wind_chill_index
   - utci             xclim.indices.universal_thermal_climate_index
 
 WBGT is implemented here directly (simplified Liljegren/Stull method) because
@@ -74,17 +73,6 @@ def humidex_celsius(t2m_c, d2m_c):
     """
     from xclim.indices import humidex
     return np.asarray(humidex(_da(t2m_c, "degC"), _da(d2m_c, "degC")), dtype=float)
-
-
-def wind_chill_celsius(t2m_c, wind_speed_ms):
-    """Wind chill (°C) via xclim.indices.wind_chill_index (Environment Canada formula).
-
-    Returns NaN where conditions are outside validity range (T > 0°C or calm wind).
-    """
-    from xclim.indices import wind_chill_index
-    return np.asarray(
-        wind_chill_index(_da(t2m_c, "degC"), _da(wind_speed_ms, "m s-1")), dtype=float
-    )
 
 
 def _estimate_mrt(t2m_c, wind_speed_ms, ssrd_wm2=None):
