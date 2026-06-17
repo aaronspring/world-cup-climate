@@ -108,7 +108,7 @@ export const T: Record<Lang, Translations> = {
     matchCount: (n, day) => `${n} Spiele · Jun ${day}`,
     tempLegend: "Temperatur beim Anstoß",
     close: "Schließen ✕",
-    feelsLike: "Gefühlt beim Anstoß",
+    feelsLike: "Gefühlte Temperatur beim Anstoß",
     airTemp: (t) => `Luft ${t}° · Hitzeindex während des Spiels`,
     home: "Heim",
     deltaTemp: "Δ Temp",
@@ -133,7 +133,7 @@ export const T: Record<Lang, Translations> = {
     },
     varLabels: {
       t2m: "Temperatur",
-      heat_index: "Gefühlt",
+      heat_index: "Gefühlte Temperatur",
       d2m: "Taupunkt",
     },
     varInfoTexts: {
