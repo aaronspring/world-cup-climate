@@ -91,7 +91,7 @@ export default function App() {
               >
                 {t.ecmwf}
               </a>
-              {cycle ? ` · cycle ${cycle.cycle.slice(0, 13)}h` : ""}
+              {cycle ? ` · ${t.cycleLabel} ${cycle.cycle.slice(0, 13)}h` : ""}
               {cycle?.source === "demo" ? ` · ${t.demoData}` : ""}
             </div>
           </div>

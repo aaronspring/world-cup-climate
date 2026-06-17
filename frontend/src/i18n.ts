@@ -5,6 +5,7 @@ export const LOCALE: Record<Lang, string> = { en: "en-US", de: "de-DE" };
 export interface Translations {
   title: string;
   ecmwf: string;
+  cycleLabel: string;
   demoData: string;
   errorTitle: string;
   errorCmd: string;
@@ -37,12 +38,14 @@ export interface Translations {
   };
   varLabels: Record<string, string>;
   varInfoTexts: Record<string, string>;
+  chart: { venue: string; thresholds: Record<string, string> };
 }
 
 export const T: Record<Lang, Translations> = {
   en: {
     title: "World Cup 2026 · Match Climate",
     ecmwf: "ECMWF forecast",
+    cycleLabel: "Forecast Reference Time",
     demoData: "demo data",
     errorTitle: "Couldn't load forecast data",
     errorCmd: "Run",
@@ -83,10 +86,21 @@ export const T: Record<Lang, Translations> = {
       d2m: "Dewpoint — the temperature at which air becomes saturated. Above 20°C feels muggy; above 25°C is tropical and very taxing for exercise.",
       wind_speed: "Wind speed 10 m above ground (m/s). Below 2 = calm; 5–10 = noticeable breeze that affects play; above 15 = strong wind.",
     },
+    chart: {
+      venue: "Venue",
+      thresholds: {
+        discomfort: "discomfort", dangerous: "dangerous", stopExercise: "stop exercise",
+        moderateHeat: "moderate heat", strongHeat: "strong heat", veryStrong: "very strong",
+        fifproLimit: "FIFPRO limit", fifaMandatory: "FIFA mandatory",
+        breeze: "breeze", windy: "windy", strong: "strong",
+        muggy: "muggy", tropical: "tropical",
+      },
+    },
   },
   de: {
     title: "WM 2026 · Spielklima",
     ecmwf: "ECMWF-Vorhersage",
+    cycleLabel: "Vorhersagezeitpunkt",
     demoData: "Demo-Daten",
     errorTitle: "Vorhersagedaten konnten nicht geladen werden",
     errorCmd: "Zuerst ausführen:",
@@ -130,6 +144,16 @@ export const T: Record<Lang, Translations> = {
       wbgt: "Wet Bulb Globe Temperature (ISO 7243; Feuchtkugel nach Stull 2011) – der Goldstandard für Outdoor-Sportsicherheit, genutzt in FIFA- und IOC-Hitzerichtlinien. Die FIFA löste Pflicht-Trinkpausen über 32°C WBGT aus (2014–2025); FIFPRO empfiehlt Maßnahmen ab 28°C.",
       d2m: "Taupunkt – Temperatur, bei der die Luft gesättigt wird. Über 20°C fühlt es sich schwül an; über 25°C ist es tropisch und sehr belastend.",
       wind_speed: "Windgeschwindigkeit 10 m über dem Boden (m/s). Unter 2 = ruhig; 5–10 = spürbarer Wind; über 15 = starker Wind.",
+    },
+    chart: {
+      venue: "Spielort",
+      thresholds: {
+        discomfort: "Unbehagen", dangerous: "gefährlich", stopExercise: "Sport stoppen",
+        moderateHeat: "mäßige Hitze", strongHeat: "starke Hitze", veryStrong: "sehr stark",
+        fifproLimit: "FIFPRO-Grenze", fifaMandatory: "FIFA-Pflicht",
+        breeze: "Brise", windy: "windig", strong: "stark",
+        muggy: "schwül", tropical: "tropisch",
+      },
     },
   },
 };
