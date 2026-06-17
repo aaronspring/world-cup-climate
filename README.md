@@ -2,6 +2,8 @@
 
 [![Deploy to GitHub Pages](https://github.com/aaronspring/world-cup-climate/actions/workflows/pages.yml/badge.svg)](https://github.com/aaronspring/world-cup-climate/actions/workflows/pages.yml)
 
+![World Cup 2026 Match Climate webapp](docs/screenshot.png)
+
 For a World Cup 2026 match **today**, compare the climate at the **match venue** with the
 climate in **each competing country's capital** — temperature and how hot it *feels*
 (heat index) — for the days around the match.
