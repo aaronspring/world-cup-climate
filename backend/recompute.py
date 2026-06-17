@@ -156,7 +156,7 @@ def make_ifs_series_fn(matches: list[Match]):
 
     def series_fn(place: Place, times: pd.DatetimeIndex) -> dict[str, np.ndarray]:
         df = dfs[_pkey(place)]
-        reindexed = df.reindex(times).interpolate("time")
+        reindexed = df.select_dtypes(include="number").reindex(times).interpolate("time")
         n = len(times)
         out: dict[str, np.ndarray] = {}
         for var_key, col in _IFS_COL_MAP.items():

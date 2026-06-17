@@ -73,7 +73,7 @@ def humidex_celsius(t2m_c, d2m_c):
     Above 40 is dangerous for physical exertion; above 45, all exercise should stop.
     """
     from xclim.indices import humidex
-    return np.asarray(humidex(_da(t2m_c, "degC"), _da(d2m_c, "degC")))
+    return np.asarray(humidex(_da(t2m_c, "degC"), _da(d2m_c, "degC")), dtype=float)
 
 
 def wind_chill_celsius(t2m_c, wind_speed_ms):
@@ -83,7 +83,7 @@ def wind_chill_celsius(t2m_c, wind_speed_ms):
     """
     from xclim.indices import wind_chill_index
     return np.asarray(
-        wind_chill_index(_da(t2m_c, "degC"), _da(wind_speed_ms, "m s-1"))
+        wind_chill_index(_da(t2m_c, "degC"), _da(wind_speed_ms, "m s-1")), dtype=float
     )
 
 
@@ -119,7 +119,7 @@ def utci_celsius(t2m_c, rh, wind_speed_ms, ssrd_wm2=None):
             _da(rh, "%"),
             _da(wind_speed_ms, "m s-1"),
             mrt=_da(mrt_c, "degC"),
-        )
+        ), dtype=float
     )
 
 
