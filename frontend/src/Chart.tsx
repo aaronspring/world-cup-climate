@@ -53,7 +53,7 @@ export default function Chart({
 
   return (
     <ResponsiveContainer width="100%" height={210}>
-      <ComposedChart data={data} margin={{ top: 8, right: 64, bottom: 0, left: 0 }}>
+      <ComposedChart data={data} margin={{ top: 8, right: 6, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="venueFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={meta.color} stopOpacity={0.28} />
@@ -117,7 +117,7 @@ export default function Chart({
               key={`${t.y}-label`}
               y={labelY}
               stroke="none"
-              label={{ value: t.label, position: "right", fill: "#7c869a", fontSize: 9 }}
+              label={{ value: t.label, position: "insideRight", fill: "#7c869a", fontSize: 9 }}
             />
           );
         })}
