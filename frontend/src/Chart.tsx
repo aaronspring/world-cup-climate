@@ -9,9 +9,11 @@ import {
   YAxis,
 } from "recharts";
 import type { Match, VarMeta } from "./types";
+import { useLang } from "./LangContext";
+import { T, LOCALE } from "./i18n";
 
-const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const fmtDate = (iso: string, locale: string) =>
+  new Date(iso).toLocaleDateString(locale, { month: "short", day: "numeric", timeZone: "UTC" });
 
 export default function Chart({
   match,
@@ -24,6 +26,9 @@ export default function Chart({
   meta: VarMeta;
   forecastStart: string | null;
 }) {
+  const [lang] = useLang();
+  const t = T[lang];
+  const locale = LOCALE[lang];
   const { time, venue, team_a, team_b } = match.series;
   const data = time.map((t, i) => ({
     t,
@@ -53,7 +58,7 @@ export default function Chart({
         <XAxis
           dataKey="t"
           ticks={dayTicks}
-          tickFormatter={fmtDate}
+          tickFormatter={(iso) => fmtDate(iso, locale)}
           tick={{ fill: "#7c869a", fontSize: 10 }}
           axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
           tickLine={false}
@@ -73,8 +78,8 @@ export default function Chart({
             borderRadius: 12,
             fontSize: 12,
           }}
-          labelFormatter={(t) =>
-            new Date(t as string).toLocaleString("en-US", {
+          labelFormatter={(ts) =>
+            new Date(ts as string).toLocaleString(locale, {
               month: "short", day: "numeric", hour: "2-digit", timeZone: "UTC",
             }) + " UTC"
           }
@@ -85,14 +90,14 @@ export default function Chart({
             x={boundary!}
             stroke="#94a3b8"
             strokeDasharray="2 4"
-            label={{ value: "forecast", fill: "#94a3b8", fontSize: 10, position: "insideTopLeft" }}
+            label={{ value: t.forecast, fill: "#94a3b8", fontSize: 10, position: "insideTopLeft" }}
           />
         )}
         <ReferenceLine
           x={kickoff}
           stroke="#facc15"
           strokeDasharray="4 3"
-          label={{ value: "kickoff", fill: "#facc15", fontSize: 10, position: "insideTopRight" }}
+          label={{ value: t.kickoff, fill: "#facc15", fontSize: 10, position: "insideTopRight" }}
         />
         <Area type="monotone" dataKey="venue" name="Venue" stroke={meta.color} strokeWidth={2.4} fill="url(#venueFill)" dot={false} />
         <Line type="monotone" dataKey="a" name={match.stats.team_a.home} stroke="#38bdf8" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />

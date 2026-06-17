@@ -5,12 +5,18 @@ import { loadCycle, loadDay, loadMatch } from "./data";
 import type { Cycle, Match, Pin } from "./types";
 import { flag } from "./flags";
 import { tempColor, TEMP_LEGEND } from "./colors";
+import { useLang } from "./LangContext";
+import { T, LOCALE } from "./i18n";
 
-const wd = (d: string) =>
-  new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+const wd = (d: string, locale: string) =>
+  new Date(d + "T00:00:00Z").toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" });
 const dayNum = (d: string) => new Date(d + "T00:00:00Z").getUTCDate();
 
 export default function App() {
+  const [lang, setLang] = useLang();
+  const t = T[lang];
+  const locale = LOCALE[lang];
+
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [date, setDate] = useState<string>("");
   const [pins, setPins] = useState<Pin[]>([]);
@@ -40,9 +46,7 @@ export default function App() {
     if (!selId) return setMatch(null);
     let live = true;
     loadMatch(selId).then((m) => live && setMatch(m)).catch((e) => setError(String(e)));
-    return () => {
-      live = false;
-    };
+    return () => { live = false; };
   }, [selId]);
 
   const sortedPins = useMemo(
@@ -50,7 +54,6 @@ export default function App() {
     [pins],
   );
 
-  // t2m overlay follows the selected match; with none selected, the first of the day.
   const overlayMap = useMemo(
     () => (selId ? sortedPins.find((p) => p.id === selId) : sortedPins[0])?.t2m_map ?? null,
     [selId, sortedPins],
@@ -60,9 +63,10 @@ export default function App() {
     return (
       <div className="grid h-full place-items-center p-8 text-center text-slate-400">
         <div>
-          <div className="mb-2 text-lg font-semibold text-slate-200">Couldn't load forecast data</div>
-          <div className="text-sm">{error}</div>
-          <div className="mt-3 text-xs">Run <code className="text-slate-300">uv run python backend/recompute.py</code> first.</div>
+          <div className="mb-2 text-lg font-semibold text-slate-200">{t.errorTitle}</div>
+          <div className="mt-3 text-xs">
+            {t.errorCmd} <code className="text-slate-300">uv run python backend/recompute.py</code>{t.errorCmdSuffix ? ` ${t.errorCmdSuffix}` : ""}
+          </div>
         </div>
       </div>
     );
@@ -76,7 +80,7 @@ export default function App() {
         <div className="glass pointer-events-auto flex items-center gap-3 self-start rounded-2xl px-4 py-2.5">
           <span className="text-xl">⚽</span>
           <div className="leading-tight">
-            <div className="font-extrabold tracking-tight">World Cup 2026 · Match Climate</div>
+            <div className="font-extrabold tracking-tight">{t.title}</div>
             <div className="text-[11px] text-slate-400">
               <a
                 href="https://app.earthmover.io/marketplace/6971be98fc964a0d0fb66e04"
@@ -85,10 +89,10 @@ export default function App() {
                 className="underline decoration-slate-600 hover:text-slate-200"
                 title="ECMWF IFS — the European Centre for Medium-Range Weather Forecasts global model. Updated every 12 hours (00 & 12 UTC). Free open dataset via Earthmover Arraylake."
               >
-                ECMWF forecast
+                {t.ecmwf}
               </a>
               {cycle ? ` · cycle ${cycle.cycle.slice(0, 13)}h` : ""}
-              {cycle?.source === "demo" ? " · demo data" : ""}
+              {cycle?.source === "demo" ? ` · ${t.demoData}` : ""}
             </div>
           </div>
         </div>
@@ -103,7 +107,7 @@ export default function App() {
                 d === date ? "bg-white text-slate-900" : "text-slate-300 hover:bg-white/10"
               }`}
             >
-              <span className="text-[10px] uppercase opacity-70">{wd(d)}</span>
+              <span className="text-[10px] uppercase opacity-70">{wd(d, locale)}</span>
               <span className="text-base font-bold leading-none">{dayNum(d)}</span>
             </button>
           ))}
@@ -117,7 +121,7 @@ export default function App() {
         }`}
       >
         <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          {sortedPins.length} matches · Jun {dayNum(date)}
+          {t.matchCount(sortedPins.length, dayNum(date))}
         </div>
         {sortedPins.map((p) => (
           <button
@@ -145,20 +149,38 @@ export default function App() {
         ))}
       </aside>
 
-      {/* Legend */}
-      <div className="glass absolute bottom-3 left-3 z-10 rounded-xl px-3 py-2">
-        <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">Temp at kickoff</div>
-        <div className="flex items-center gap-2">
-          <div
-            className="h-2.5 w-40 rounded-full"
-            style={{
-              background: `linear-gradient(90deg, ${TEMP_LEGEND.map((t) => tempColor(t)).join(", ")})`,
-            }}
-          />
+      {/* Bottom-left: legend + language picker */}
+      <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-2">
+        {/* Language picker */}
+        <div className="glass flex gap-1 self-start rounded-xl px-2 py-1.5">
+          {(["en", "de"] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`rounded-lg px-2 py-0.5 text-xs font-semibold transition ${
+                l === lang ? "bg-white text-slate-900" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              {l === "en" ? "🇬🇧 EN" : "🇩🇪 DE"}
+            </button>
+          ))}
         </div>
-        <div className="mt-0.5 flex justify-between text-[10px] text-slate-500">
-          <span>{TEMP_LEGEND[0]}°</span>
-          <span>{TEMP_LEGEND[TEMP_LEGEND.length - 1]}°</span>
+
+        {/* Temperature legend */}
+        <div className="glass rounded-xl px-3 py-2">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">{t.tempLegend}</div>
+          <div className="flex items-center gap-2">
+            <div
+              className="h-2.5 w-40 rounded-full"
+              style={{
+                background: `linear-gradient(90deg, ${TEMP_LEGEND.map((t) => tempColor(t)).join(", ")})`,
+              }}
+            />
+          </div>
+          <div className="mt-0.5 flex justify-between text-[10px] text-slate-500">
+            <span>{TEMP_LEGEND[0]}°</span>
+            <span>{TEMP_LEGEND[TEMP_LEGEND.length - 1]}°</span>
+          </div>
         </div>
       </div>
 

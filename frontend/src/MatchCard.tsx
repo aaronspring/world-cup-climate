@@ -3,37 +3,31 @@ import type { Match, TeamStat, VarMeta } from "./types";
 import { flag } from "./flags";
 import { tempColor } from "./colors";
 import Chart from "./Chart";
+import { useLang } from "./LangContext";
+import { T, type Translations } from "./i18n";
 
 const sign = (x: number) => { const r = Math.round(x); return r > 0 ? `+${r}` : `${r}`; };
 const deltaColor = (x: number) =>
   x > 0.5 ? "text-orange-300" : x < -0.5 ? "text-sky-300" : "text-slate-300";
 
-function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
-  const tz =
-    stat.tz_diff_h === 0 ? "same time" : `${sign(stat.tz_diff_h)}h vs venue`;
+function TeamColumn({ team, stat, t }: { team: string; stat: TeamStat; t: Translations }) {
   return (
     <div className="flex-1 rounded-2xl bg-white/5 p-3.5">
       <div className="flex items-center gap-2">
         <span className="text-2xl leading-none">{flag(team)}</span>
         <div className="min-w-0">
           <div className="truncate font-semibold">{team}</div>
-          <div className="truncate text-xs text-slate-400">home · {stat.home}</div>
+          <div className="truncate text-xs text-slate-400">{t.home} · {stat.home}</div>
         </div>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
-        <Stat label="Δ temp" value={`${sign(stat.d_t2m)}°`} cls={deltaColor(stat.d_t2m)} tip="Air temperature difference: home city vs. venue around kickoff. Orange = hotter at home, blue = cooler." />
-        <Stat label="Δ feels" value={`${sign(stat.d_heat_index)}°`} cls={deltaColor(stat.d_heat_index)} tip="Heat-index difference: accounts for humidity — how much hotter or cooler it feels at home vs. the venue." />
-        <Stat label="body clock" value={tz === "same time" ? "0h" : `${sign(stat.tz_diff_h)}h`} cls="text-violet-300" />
+        <Stat label={t.deltaTemp} value={`${sign(stat.d_t2m)}°`} cls={deltaColor(stat.d_t2m)} tip={t.deltaTemp_tip} />
+        <Stat label={t.deltaFeels} value={`${sign(stat.d_heat_index)}°`} cls={deltaColor(stat.d_heat_index)} tip={t.deltaFeels_tip} />
+        <Stat label={t.bodyClock} value={stat.tz_diff_h === 0 ? "0h" : `${sign(stat.tz_diff_h)}h`} cls="text-violet-300" />
       </div>
     </div>
   );
 }
-
-const VAR_TIPS: Record<string, string> = {
-  t2m: "Air temperature 2 m above ground (°C)",
-  heat_index: "Feels like — combines air temperature and humidity to estimate perceived heat stress",
-  d2m: "Dewpoint — the temperature at which air becomes saturated; higher dewpoint = more humid and muggy",
-};
 
 function Stat({ label, value, cls, tip }: { label: string; value: string; cls: string; tip?: string }) {
   return (
@@ -59,6 +53,9 @@ export default function MatchCard({
   forecastStart: string | null;
   onClose: () => void;
 }) {
+  const [lang] = useLang();
+  const t = T[lang];
+
   return (
     <AnimatePresence>
       {match && (
@@ -78,7 +75,7 @@ export default function MatchCard({
               onClick={onClose}
               className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition hover:bg-white/20"
             >
-              close ✕
+              {t.close}
             </button>
           </div>
 
@@ -94,11 +91,11 @@ export default function MatchCard({
               {match.venue.stadium} · {match.venue.city}
             </div>
             <div className="text-sm text-slate-400">
-              Kickoff {match.kickoff_local} local
+              {t.kickoff.charAt(0).toUpperCase() + t.kickoff.slice(1)} {match.kickoff_local} local
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4" title="Heat index at kickoff — combines air temperature and humidity to show how hot it actually feels to players on the pitch. Above 32°C is considered stressful for athletes.">
+          <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4" title={t.feelsLikeTip}>
             <div
               className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-black"
               style={{ background: tempColor(match.heat_index_at_kickoff) }}
@@ -106,16 +103,14 @@ export default function MatchCard({
               {Math.round(match.heat_index_at_kickoff)}°
             </div>
             <div>
-              <div className="text-sm font-semibold">Feels like at kickoff</div>
-              <div className="text-xs text-slate-400">
-                Air {Math.round(match.t2m_at_kickoff)}° · heat-index over the match window
-              </div>
+              <div className="text-sm font-semibold">{t.feelsLike}</div>
+              <div className="text-xs text-slate-400">{t.airTemp(Math.round(match.t2m_at_kickoff))}</div>
             </div>
           </div>
 
           <div className="flex gap-3">
-            <TeamColumn team={match.team_a} stat={match.stats.team_a} />
-            <TeamColumn team={match.team_b} stat={match.stats.team_b} />
+            <TeamColumn team={match.team_a} stat={match.stats.team_a} t={t} />
+            <TeamColumn team={match.team_b} stat={match.stats.team_b} t={t} />
           </div>
 
           <div>
@@ -124,7 +119,7 @@ export default function MatchCard({
                 <button
                   key={k}
                   onClick={() => setVarKey(k)}
-                  title={VAR_TIPS[k]}
+                  title={t.varTips[k]}
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
                     k === varKey
                       ? "bg-white text-slate-900"
@@ -137,7 +132,7 @@ export default function MatchCard({
             </div>
             <div className="rounded-2xl bg-black/20 p-3">
               <div className="mb-1 px-1 text-xs text-slate-400">
-                {variables[varKey].label} ({variables[varKey].unit}) · venue (solid) vs home cities (dashed)
+                {t.venueSeries(variables[varKey].label, variables[varKey].unit)}
               </div>
               <Chart match={match} varKey={varKey} meta={variables[varKey]} forecastStart={forecastStart} />
             </div>
