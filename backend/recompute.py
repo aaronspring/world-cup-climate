@@ -12,11 +12,11 @@ Two data backends:
     --source demo   physically plausible synthetic forecast (no auth, default).
                     Deterministic per location so re-runs are stable.
     --source ifs    real ECMWF IFS point extraction via world_cup_climate.ifs.
-                    Slower, needs Arraylake auth. No synthetic fill — only the
-                    variables IFS actually provides.
+                    Slower, needs Arraylake auth.
 
-Both backends carry the same variable set: t2m, d2m, and the derived heat index
-(all from real 2t/2d). Wind/precip/cloud/solar were dropped (no IFS extraction).
+Both backends carry the same variable set: t2m, d2m, heat_index (from 2t/2d),
+humidex (from 2t/2d), plus wind_speed, wind_chill, apparent_temp, and wbgt
+when wind and solar data are available.
 """
 
 from __future__ import annotations
@@ -38,16 +38,27 @@ log = logging.getLogger("recompute")
 from world_cup_climate.config import PROJECT_DIR
 from world_cup_climate.fixtures import Match, load_matches
 from world_cup_climate.locations import Place
-from world_cup_climate.sports import heat_index_celsius, relative_humidity
+from world_cup_climate.sports import (
+    heat_index_celsius,
+    humidex_celsius,
+    relative_humidity,
+    utci_celsius,
+    wbgt_celsius,
+    wind_chill_celsius,
+)
 
 OUT_DIR = PROJECT_DIR / "frontend" / "public" / "data"
 
 # Variables carried in every per-place timeseries (canonical key -> label/unit/color).
-# Only what real IFS 2t/2d gives us: temperature, dewpoint, and the derived heat index.
 VARIABLES = {
-    "t2m": {"label": "Temperature", "unit": "°C", "color": "#f97316"},
-    "heat_index": {"label": "Feels like", "unit": "°C", "color": "#ef4444"},
-    "d2m": {"label": "Dewpoint", "unit": "°C", "color": "#22d3ee"},
+    "t2m":          {"label": "Temperature",    "unit": "°C",  "color": "#f97316"},
+    "heat_index":   {"label": "Feels like",     "unit": "°C",  "color": "#ef4444"},
+    "humidex":      {"label": "Humidex",        "unit": "°C",  "color": "#fb923c"},
+    "wind_chill":   {"label": "Wind chill",     "unit": "°C",  "color": "#38bdf8"},
+    "utci":          {"label": "UTCI",           "unit": "°C",  "color": "#a78bfa"},
+    "wbgt":         {"label": "WBGT",           "unit": "°C",  "color": "#f43f5e"},
+    "d2m":          {"label": "Dewpoint",       "unit": "°C",  "color": "#22d3ee"},
+    "wind_speed":   {"label": "Wind speed",     "unit": "m/s", "color": "#94a3b8"},
 }
 
 WINDOW_BEFORE = pd.Timedelta(days=1)   # series starts matchday - 1
@@ -55,56 +66,58 @@ WINDOW_AFTER = pd.Timedelta(days=5)    # ... and runs 5 days past for the outloo
 
 
 def utc_offset_hours(lon: float) -> int:
-    """Rough wall-clock offset from longitude.
-
-    ponytail: solar-longitude estimate, accurate to ~1-2h. Only the *difference*
-    between two cities is shown. Upgrade to timezonefinder + zoneinfo if exact
-    DST-aware offsets matter.
-    """
+    """Rough wall-clock offset from longitude."""
     return int(round(lon / 15.0))
 
 
 # --- synthetic forecast model -------------------------------------------------
 
 def synth_series(place: Place, times: pd.DatetimeIndex) -> dict[str, np.ndarray]:
-    """Plausible hourly t2m/d2m/heat-index for one location over `times` (UTC, naive).
+    """Plausible hourly t2m/d2m/wind/solar + xclim indices for one location.
 
-    Temperature/dewpoint are *smooth* functions of lat/lon, so two nearby points
-    (e.g. a stadium and its own capital) get near-identical climate and a ~0 delta,
-    as real forecast data would.
+    All fields are *smooth* functions of lat/lon so nearby points (stadium vs
+    its own capital) stay in phase with a ~0 delta, as real forecast data would.
     """
     lat, lon = place.lat, place.lon
     hours = times.view("int64") / 3.6e12  # hours since epoch
     local_h = (np.array([t.hour + t.minute / 60 for t in times]) + lon / 15.0) % 24
 
-    # June climatological daily-mean temperature: a smooth parabola peaking in the
-    # NH subtropics (hot summer) and falling off toward the SH (winter) and poles.
-    micro = 1.5 * math.sin(math.radians(lat) * 4) * math.cos(math.radians(lon) * 3)  # smooth city-scale
-    # ponytail: no altitude term (not in locations.json), so high cities like
-    # Mexico City read a few °C warm. Add an elevation lookup when wiring real IFS.
+    micro = 1.5 * math.sin(math.radians(lat) * 4) * math.cos(math.radians(lon) * 3)
     t_mean = float(np.clip(26 - 0.008 * (lat - 18) ** 2 + micro, -8, 38))
 
-    # Dryness 0 (humid/coastal) .. 1 (continental/desert): bigger diurnal range, drier.
     dryness = float(np.clip(0.3 + abs(lat) / 120 + 0.15 * math.sin(math.radians(lon) * 2), 0.05, 0.95))
     diurnal_amp = 4 + 7 * dryness
 
-    # Large-scale synoptic wave: phase set by location (weather travels), not random,
-    # so co-located points stay in phase.
     synoptic = 3.5 * np.sin(2 * np.pi * (hours - hours[0]) / 84 + math.radians(lon) * 1.5 + math.radians(lat))
-
     diurnal = diurnal_amp * np.cos(2 * np.pi * (local_h - 15) / 24)
     t2m = t_mean + diurnal + synoptic
 
     spread = (3 + 12 * dryness) * (0.6 + 0.4 * np.clip((local_h - 6) / 12, 0, 1))
     d2m = np.minimum(t2m - spread, t2m - 0.5)
 
-    rh = relative_humidity(t2m, d2m)
-    hi = heat_index_celsius(t2m, rh)
+    # Synthetic wind: moderate base, afternoon peak, synoptic variation.
+    wind_ms = np.clip(
+        3.5 + 1.5 * (1.0 - dryness)
+        + 2.0 * np.cos(2 * np.pi * (local_h - 14) / 24)
+        + 1.0 * np.sin(2 * np.pi * (hours - hours[0]) / 72 + math.radians(lat)),
+        0.3, 12.0,
+    )
 
+    # Synthetic solar: sinusoidal between 6am and 6pm local time; drier = clearer sky.
+    day_frac = (local_h - 6) / 12
+    solar_frac = np.where((day_frac >= 0) & (day_frac <= 1), np.sin(np.pi * day_frac), 0.0)
+    ssrd_wm2 = 800.0 * (0.7 + 0.3 * dryness) * solar_frac
+
+    rh = relative_humidity(t2m, d2m)
     return {
-        "t2m": t2m,
-        "heat_index": np.asarray(hi, dtype=float),
-        "d2m": d2m,
+        "t2m":          t2m,
+        "heat_index":   np.asarray(heat_index_celsius(t2m, rh),                          dtype=float),
+        "humidex":      np.asarray(humidex_celsius(t2m, d2m),                  dtype=float),
+        "wind_chill":   np.asarray(wind_chill_celsius(t2m, wind_ms),          dtype=float),
+        "utci":         np.asarray(utci_celsius(t2m, rh, wind_ms, ssrd_wm2),  dtype=float),
+        "wbgt":         np.asarray(wbgt_celsius(t2m, rh, wind_ms, ssrd_wm2),  dtype=float),
+        "d2m":          d2m,
+        "wind_speed":   wind_ms,
     }
 
 
@@ -112,9 +125,22 @@ def _pkey(p: Place) -> tuple[float, float]:
     return (round(p.lat, 4), round(p.lon, 4))
 
 
+# Columns produced by ifs._derive (when all variables are present).
+_IFS_COL_MAP = {
+    "t2m":        "t2m_c",
+    "heat_index": "heat_index_c",
+    "humidex":    "humidex_c",
+    "wind_chill": "wind_chill_c",
+    "utci":       "utci_c",
+    "wbgt":       "wbgt_c",
+    "d2m":        "d2m_c",
+    "wind_speed": "wind_ms",
+}
+
+
 def make_ifs_series_fn(matches: list[Match]):
     """Prefetch every unique fixture point in one bulk IFS read, then serve series
-    from memory. Avoids the per-location round-trips that made this slow."""
+    from memory."""
     from world_cup_climate.ifs import extract_points
 
     uniq: dict[tuple[float, float], tuple[float, float]] = {}
@@ -128,15 +154,17 @@ def make_ifs_series_fn(matches: list[Match]):
     dfs = dict(zip(keys, extract_points([uniq[k] for k in keys])))
     log.info("  extracted %d points in %.1fs", len(keys), time.perf_counter() - t0)
 
-    cols = ["t2m_c", "d2m_c", "heat_index_c"]
-
     def series_fn(place: Place, times: pd.DatetimeIndex) -> dict[str, np.ndarray]:
-        s = dfs[_pkey(place)][cols].reindex(times).interpolate("time")
-        return {
-            "t2m": s["t2m_c"].to_numpy(),
-            "heat_index": s["heat_index_c"].to_numpy(),
-            "d2m": s["d2m_c"].to_numpy(),
-        }
+        df = dfs[_pkey(place)]
+        reindexed = df.reindex(times).interpolate("time")
+        n = len(times)
+        out: dict[str, np.ndarray] = {}
+        for var_key, col in _IFS_COL_MAP.items():
+            if col in reindexed.columns:
+                out[var_key] = reindexed[col].to_numpy()
+            else:
+                out[var_key] = np.full(n, np.nan)
+        return out
 
     return series_fn
 
@@ -151,14 +179,26 @@ def match_id(m: Match) -> str:
     return f"{m.date}_{slug(m.team_a)}-vs-{slug(m.team_b)}"
 
 
-def round_series(a: np.ndarray, nd: int = 1) -> list[float]:
-    return [round(float(x), nd) for x in a]
+def round_series(a: np.ndarray, nd: int = 1) -> list[float | None]:
+    out = []
+    for x in a:
+        v = float(x)
+        out.append(None if math.isnan(v) else round(v, nd))
+    return out
 
 
 def window_mean(times: pd.DatetimeIndex, vals: np.ndarray, ko: pd.Timestamp) -> float:
     mask = (times >= ko) & (times <= ko + pd.Timedelta(hours=2))
     sel = vals[mask]
-    return float(np.mean(sel)) if len(sel) else float(np.mean(vals))
+    valid = sel[~np.isnan(sel)] if len(sel) else np.array([])
+    if len(valid):
+        return float(np.mean(valid))
+    fallback = vals[~np.isnan(vals)]
+    return float(np.mean(fallback)) if len(fallback) else float("nan")
+
+
+def _safe_round(x: float, nd: int = 1) -> float | None:
+    return None if math.isnan(x) else round(x, nd)
 
 
 def build_match(m: Match, series_fn) -> dict:
@@ -176,16 +216,20 @@ def build_match(m: Match, series_fn) -> dict:
 
     def stats(home: Place, sh: dict) -> dict:
         h_off = utc_offset_hours(home.lon)
-        return {
+        base = {
             "home": home.name,
             "country": home.country,
             "tz_diff_h": h_off - v_off,
-            "d_t2m": round(window_mean(times, sv["t2m"], ko) - window_mean(times, sh["t2m"], ko), 1),
-            "d_d2m": round(window_mean(times, sv["d2m"], ko) - window_mean(times, sh["d2m"], ko), 1),
-            "d_heat_index": round(
-                window_mean(times, sv["heat_index"], ko) - window_mean(times, sh["heat_index"], ko), 1
-            ),
+            "d_t2m":       _safe_round(window_mean(times, sv["t2m"],        ko) - window_mean(times, sh["t2m"],        ko)),
+            "d_d2m":       _safe_round(window_mean(times, sv["d2m"],        ko) - window_mean(times, sh["d2m"],        ko)),
+            "d_heat_index":_safe_round(window_mean(times, sv["heat_index"], ko) - window_mean(times, sh["heat_index"], ko)),
         }
+        for key in ("humidex", "wbgt", "utci"):
+            v_val = window_mean(times, sv[key], ko)
+            h_val = window_mean(times, sh[key], ko)
+            if not math.isnan(v_val) and not math.isnan(h_val):
+                base[f"d_{key}"] = _safe_round(v_val - h_val)
+        return base
 
     return {
         "id": match_id(m),
@@ -203,12 +247,13 @@ def build_match(m: Match, series_fn) -> dict:
             "lat": v.lat,
             "lon": v.lon,
         },
-        "t2m_at_kickoff": round(window_mean(times, sv["t2m"], ko), 1),
+        "t2m_at_kickoff":        round(window_mean(times, sv["t2m"],        ko), 1),
         "heat_index_at_kickoff": round(window_mean(times, sv["heat_index"], ko), 1),
+        "wbgt_at_kickoff":       _safe_round(window_mean(times, sv["wbgt"], ko)),
         "window": {"start": times[0].isoformat() + "Z", "end": times[-1].isoformat() + "Z"},
         "series": {
             "time": [t.isoformat() + "Z" for t in times],
-            "venue": {k: round_series(sv[k]) for k in VARIABLES},
+            "venue":  {k: round_series(sv[k]) for k in VARIABLES},
             "team_a": {k: round_series(sa[k]) for k in VARIABLES},
             "team_b": {k: round_series(sb[k]) for k in VARIABLES},
         },
@@ -225,6 +270,8 @@ def pin(match: dict) -> dict:
             "team_a", "team_b", "venue", "t2m_at_kickoff", "heat_index_at_kickoff",
         )
     }
+    if "wbgt_at_kickoff" in match:
+        d["wbgt_at_kickoff"] = match["wbgt_at_kickoff"]
     if "t2m_map" in match:
         d["t2m_map"] = match["t2m_map"]
     return d
@@ -257,7 +304,6 @@ def main() -> None:
             [pd.Timestamp(m.kickoff_utc).tz_convert(None) for m in matches]
         )
         for k, vals in fields.items():
-            # NaN (masked/ocean cells) isn't valid JSON -> null (transparent in UI).
             clean = [None if v != v else v for v in vals]
             write_json(args.out / "t2m" / f"{k}.json", {**meta, "values": clean})
         log.info("  %d unique t2m fields (%d×%d) in %.1fs",

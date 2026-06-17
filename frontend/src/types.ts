@@ -34,7 +34,8 @@ export interface Pin {
   venue: Venue;
   t2m_at_kickoff: number;
   heat_index_at_kickoff: number;
-  t2m_map?: string; // path to the NA t2m field valid at this match (ifs source only)
+  wbgt_at_kickoff?: number | null;
+  t2m_map?: string;
 }
 
 export interface Day {
@@ -49,6 +50,9 @@ export interface TeamStat {
   d_t2m: number;
   d_d2m: number;
   d_heat_index: number;
+  d_humidex?: number | null;
+  d_wbgt?: number | null;
+  d_utci?: number | null;
 }
 
 export type SeriesVars = Record<string, number[]>;

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Match, TeamStat, VarMeta } from "./types";
 import { flag } from "./flags";
@@ -8,9 +9,107 @@ const sign = (x: number) => { const r = Math.round(x); return r > 0 ? `+${r}` : 
 const deltaColor = (x: number) =>
   x > 0.5 ? "text-orange-300" : x < -0.5 ? "text-sky-300" : "text-slate-300";
 
+// ── InfoTooltip ──────────────────────────────────────────────────────────────
+// Visible ❔ button that opens a popover on hover or click (works on touch too).
+
+interface TooltipInfo { text: string; href: string }
+
+function InfoTooltip({ text, href }: TooltipInfo) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-flex shrink-0">
+      <button
+        type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="cursor-help px-0.5 text-[11px] leading-none text-slate-500 hover:text-slate-300 focus:outline-none"
+        aria-label="More information"
+      >
+        ❔
+      </button>
+      {open && (
+        <span
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+          className="pointer-events-auto absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-xl bg-slate-900 px-3.5 py-3 text-xs leading-relaxed text-slate-200 shadow-2xl ring-1 ring-white/10"
+        >
+          {text}
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="mt-2 flex items-center gap-1 font-medium text-sky-400 hover:text-sky-300 hover:underline"
+          >
+            xclim docs ↗
+          </a>
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ── Variable tooltips ────────────────────────────────────────────────────────
+
+const VAR_INFO: Record<string, TooltipInfo> = {
+  t2m: {
+    text: "Air temperature 2 m above the ground. The raw atmospheric reading — doesn't account for wind or humidity.",
+    href: "https://xclim.readthedocs.io/en/stable/",
+  },
+  heat_index: {
+    text: "NOAA heat index: how hot it actually feels, combining temperature and humidity. At 35°C with 80% humidity it can feel like 50°C. Meaningful only above ~27°C.",
+    href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.heat_index",
+  },
+  humidex: {
+    text: "Environment Canada's official heat-stress scale. Above 40 is dangerous for exercise; above 45 all physical exertion should stop.",
+    href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.humidex",
+  },
+  wind_chill: {
+    text: "How cold it feels when the wind is blowing. Only valid below ~10°C — a 6°C Vancouver morning with strong wind can feel like −1°C. Shows NaN in warm conditions.",
+    href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.wind_chill_index",
+  },
+  utci: {
+    text: "Universal Thermal Climate Index (IOC standard for Olympic Games planning). The most comprehensive outdoor comfort index — combines temperature, humidity, wind, and solar radiation. Negative = cold stress; above 26 = heat stress; above 38 = very strong heat stress.",
+    href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.universal_thermal_climate_index",
+  },
+  wbgt: {
+    text: "Wet Bulb Globe Temperature — the gold standard for outdoor sports safety. FIFA's cooling-break protocol is written in WBGT: >28°C breaks are possible, >32°C they're mandatory under IFAB rules.",
+    href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.wet_bulb_globe_temperature",
+  },
+  d2m: {
+    text: "Dewpoint — the temperature at which air becomes saturated. Above 20°C feels muggy; above 25°C is tropical and very taxing for exercise.",
+    href: "https://xclim.readthedocs.io/en/stable/",
+  },
+  wind_speed: {
+    text: "Wind speed 10 m above ground (m/s). Below 2 = calm; 5–10 = noticeable breeze that affects play; above 15 = strong wind.",
+    href: "https://xclim.readthedocs.io/en/stable/",
+  },
+};
+
+// ── Stat tile ────────────────────────────────────────────────────────────────
+
+function Stat({
+  label, value, cls, info,
+}: {
+  label: string; value: string; cls: string; info?: TooltipInfo;
+}) {
+  return (
+    <div className="rounded-xl bg-black/20 px-1 py-2">
+      <div className={`text-lg font-bold tabular-nums ${cls}`}>{value}</div>
+      <div className="flex items-center justify-center gap-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+        {label}
+        {info && <InfoTooltip {...info} />}
+      </div>
+    </div>
+  );
+}
+
+// ── Team column ──────────────────────────────────────────────────────────────
+
 function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
-  const tz =
-    stat.tz_diff_h === 0 ? "same time" : `${sign(stat.tz_diff_h)}h vs venue`;
+  const tz = stat.tz_diff_h === 0 ? "same time" : `${sign(stat.tz_diff_h)}h vs venue`;
+  const hasWbgt = stat.d_wbgt != null;
   return (
     <div className="flex-1 rounded-2xl bg-white/5 p-3.5">
       <div className="flex items-center gap-2">
@@ -20,29 +119,63 @@ function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
           <div className="truncate text-xs text-slate-400">home · {stat.home}</div>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
-        <Stat label="Δ temp" value={`${sign(stat.d_t2m)}°`} cls={deltaColor(stat.d_t2m)} tip="Air temperature difference: home city vs. venue around kickoff. Orange = hotter at home, blue = cooler." />
-        <Stat label="Δ feels" value={`${sign(stat.d_heat_index)}°`} cls={deltaColor(stat.d_heat_index)} tip="Heat-index difference: accounts for humidity — how much hotter or cooler it feels at home vs. the venue." />
-        <Stat label="body clock" value={tz === "same time" ? "0h" : `${sign(stat.tz_diff_h)}h`} cls="text-violet-300" />
+      <div className={`mt-3 grid gap-1.5 text-center ${hasWbgt ? "grid-cols-2" : "grid-cols-3"}`}>
+        <Stat
+          label="Δ temp"
+          value={`${sign(stat.d_t2m)}°`}
+          cls={deltaColor(stat.d_t2m)}
+          info={{
+            text: "Air-temperature difference between home city and venue at kickoff. Orange = venue is hotter than home, blue = cooler.",
+            href: "https://xclim.readthedocs.io/en/stable/",
+          }}
+        />
+        <Stat
+          label="Δ feels"
+          value={`${sign(stat.d_heat_index)}°`}
+          cls={deltaColor(stat.d_heat_index)}
+          info={{
+            text: "Heat-index difference between home and venue. Accounts for humidity — a dry 35°C and a humid 30°C can feel equally bad.",
+            href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.heat_index",
+          }}
+        />
+        {hasWbgt ? (
+          <Stat
+            label="Δ WBGT"
+            value={`${sign(stat.d_wbgt!)}°`}
+            cls={deltaColor(stat.d_wbgt!)}
+            info={{
+              text: "WBGT difference: the FIFA match-safety index. Combines heat, humidity, wind, and solar radiation. >28°C = cooling breaks possible; >32°C = mandatory.",
+              href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.wet_bulb_globe_temperature",
+            }}
+          />
+        ) : (
+          <Stat
+            label="body clock"
+            value={tz === "same time" ? "0h" : `${sign(stat.tz_diff_h)}h`}
+            cls="text-violet-300"
+            info={{
+              text: "Approximate time-zone difference between home city and venue (based on longitude). A large jet-lag gap can affect player alertness and recovery.",
+              href: "https://xclim.readthedocs.io/en/stable/",
+            }}
+          />
+        )}
+        {hasWbgt && (
+          <Stat
+            label="body clock"
+            value={tz === "same time" ? "0h" : `${sign(stat.tz_diff_h)}h`}
+            cls="text-violet-300"
+            info={{
+              text: "Approximate time-zone difference (longitude-based). A large gap affects player alertness and recovery.",
+              href: "https://xclim.readthedocs.io/en/stable/",
+            }}
+          />
+        )}
       </div>
     </div>
   );
 }
 
-const VAR_TIPS: Record<string, string> = {
-  t2m: "Air temperature 2 m above ground (°C)",
-  heat_index: "Feels like — combines air temperature and humidity to estimate perceived heat stress",
-  d2m: "Dewpoint — the temperature at which air becomes saturated; higher dewpoint = more humid and muggy",
-};
-
-function Stat({ label, value, cls, tip }: { label: string; value: string; cls: string; tip?: string }) {
-  return (
-    <div className="rounded-xl bg-black/20 px-1 py-2" title={tip}>
-      <div className={`text-lg font-bold tabular-nums ${cls}`}>{value}</div>
-      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
-    </div>
-  );
-}
+// ── MatchCard ────────────────────────────────────────────────────────────────
 
 export default function MatchCard({
   match,
@@ -98,17 +231,33 @@ export default function MatchCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4" title="Heat index at kickoff — combines air temperature and humidity to show how hot it actually feels to players on the pitch. Above 32°C is considered stressful for athletes.">
+          {/* Kickoff hero tile */}
+          <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4">
             <div
               className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-black"
               style={{ background: tempColor(match.heat_index_at_kickoff) }}
             >
               {Math.round(match.heat_index_at_kickoff)}°
             </div>
-            <div>
-              <div className="text-sm font-semibold">Feels like at kickoff</div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1 text-sm font-semibold">
+                Feels like at kickoff
+                <InfoTooltip
+                  text="Heat index at kickoff — combines air temperature and humidity to show how hot it actually feels on the pitch. Above 32°C is considered stressful for athletes."
+                  href="https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.heat_index"
+                />
+              </div>
               <div className="text-xs text-slate-400">
-                Air {Math.round(match.t2m_at_kickoff)}° · heat-index over the match window
+                Air {Math.round(match.t2m_at_kickoff)}°
+                {match.wbgt_at_kickoff != null && (
+                  <span className="ml-2">
+                    · WBGT {Math.round(match.wbgt_at_kickoff)}°
+                    <InfoTooltip
+                      text="WBGT (Wet Bulb Globe Temperature) at kickoff — the FIFA match-safety standard. >28°C = cooling breaks possible; >32°C = mandatory."
+                      href="https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.wet_bulb_globe_temperature"
+                    />
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -118,21 +267,25 @@ export default function MatchCard({
             <TeamColumn team={match.team_b} stat={match.stats.team_b} />
           </div>
 
+          {/* Chart variable selector */}
           <div>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {Object.entries(variables).map(([k, m]) => (
-                <button
-                  key={k}
-                  onClick={() => setVarKey(k)}
-                  title={VAR_TIPS[k]}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                    k === varKey
-                      ? "bg-white text-slate-900"
-                      : "bg-white/10 text-slate-300 hover:bg-white/20"
-                  }`}
-                >
-                  {m.label}
-                </button>
+                <span key={k} className="inline-flex items-center">
+                  <button
+                    onClick={() => setVarKey(k)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                      k === varKey
+                        ? "bg-white text-slate-900"
+                        : "bg-white/10 text-slate-300 hover:bg-white/20"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                  {VAR_INFO[k] && (
+                    <InfoTooltip text={VAR_INFO[k].text} href={VAR_INFO[k].href} />
+                  )}
+                </span>
               ))}
             </div>
             <div className="rounded-2xl bg-black/20 p-3">
