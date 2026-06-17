@@ -13,8 +13,27 @@ Data:
 - Joined into one continuous line per location.
 
 **Variables (sports-relevant):** `2t` (air temperature) and `2d` (dewpoint) →
-relative humidity → **heat index** (player heat stress). Both are instantaneous, so
-they are meaningful exactly at `step=0`.
+relative humidity → heat-stress indices (player heat stress). Both raw fields are
+instantaneous, so they are meaningful exactly at `step=0`.
+
+### Indices (webapp)
+
+The match card lets you switch the forecast chart between these indices — the set is
+driven by `cycles/latest.json` `variables`, so the webapp renders whatever the backend
+emits. Each carries a `label`, `unit` and chart `color`.
+
+| key | label | unit | what it is |
+| --- | --- | --- | --- |
+| `t2m` | Temperature | °C | 2 m air temperature |
+| `d2m` | Dewpoint | °C | temperature at which air saturates — higher = more humid/muggy |
+| `heat_index` | Feels like | °C | NOAA heat index (Rothfusz): air temperature + humidity |
+| `humidex` | Humidex | °C | Canadian comfort index: air temperature + dewpoint |
+| `utci` | UTCI | °C | Universal Thermal Climate Index: temperature, humidity, wind, radiation |
+| `wbgt` | WBGT | °C | Wet-Bulb Globe Temperature — the heat-stress standard for sport |
+| `wind_speed` | Wind speed | m/s | 10 m wind speed |
+
+The summary stats on each match card are deltas of home capital vs. venue around
+kickoff: **Δ temp** (`t2m`) and **Δ feels** (`heat_index`).
 
 ## Setup
 
