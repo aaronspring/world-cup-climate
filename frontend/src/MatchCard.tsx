@@ -13,9 +13,9 @@ const deltaColor = (x: number) =>
 
 // ── InfoTooltip ──────────────────────────────────────────────────────────────
 
-interface TooltipInfo { text: string; href: string }
+interface TooltipInfo { text: string; href?: string; linkLabel?: string }
 
-function InfoTooltip({ text, href }: TooltipInfo) {
+function InfoTooltip({ text, href, linkLabel }: TooltipInfo) {
   const [open, setOpen] = useState(false);
   return (
     <span className="relative inline-flex shrink-0">
@@ -37,30 +37,39 @@ function InfoTooltip({ text, href }: TooltipInfo) {
           className="pointer-events-auto absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-xl bg-slate-900 px-3.5 py-3 text-xs leading-relaxed text-slate-200 shadow-2xl ring-1 ring-white/10"
         >
           {text}
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="mt-2 flex items-center gap-1 font-medium text-sky-400 hover:text-sky-300 hover:underline"
-          >
-            xclim docs ↗
-          </a>
+          {href && (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="mt-2 flex items-center gap-1 font-medium text-sky-400 hover:text-sky-300 hover:underline"
+            >
+              {linkLabel ?? "xclim docs"} ↗
+            </a>
+          )}
         </span>
       )}
     </span>
   );
 }
 
-// hrefs are language-neutral; text comes from translations
-const VAR_INFO_HREF: Record<string, string> = {
-  t2m:        "https://xclim.readthedocs.io/en/stable/",
-  heat_index: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.heat_index",
-  humidex:    "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.humidex",
-  utci:       "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.universal_thermal_climate_index",
-  wbgt:       "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.wet_bulb_globe_temperature",
-  d2m:        "https://xclim.readthedocs.io/en/stable/",
-  wind_speed: "https://xclim.readthedocs.io/en/stable/",
+// Source link per index — language-neutral. xclim docs only where the index is
+// actually computed with xclim (humidex, utci); others cite their real source.
+// Raw variables (t2m, d2m, wind_speed) have no derived-index source → no link.
+const XCLIM = (anchor: string): TooltipInfo["href"] =>
+  `https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.${anchor}`;
+const NOAA_HI = { href: "https://www.weather.gov/media/ffc/ta_htindx.PDF", linkLabel: "NOAA" };
+const STULL_WBGT = { href: "https://doi.org/10.1175/JAMC-D-11-0143.1", linkLabel: "Stull 2011" };
+
+const VAR_SOURCE: Record<string, { href?: string; linkLabel?: string }> = {
+  t2m:        {},
+  heat_index: NOAA_HI,
+  humidex:    { href: XCLIM("humidex") },
+  utci:       { href: XCLIM("universal_thermal_climate_index") },
+  wbgt:       STULL_WBGT,
+  d2m:        {},
+  wind_speed: {},
 };
 
 // ── Stat tile ────────────────────────────────────────────────────────────────
@@ -100,27 +109,27 @@ function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
           label={t.deltaTemp}
           value={`${sign(stat.d_t2m)}°`}
           cls={deltaColor(stat.d_t2m)}
-          info={{ text: si.deltaTemp, href: "https://xclim.readthedocs.io/en/stable/" }}
+          info={{ text: si.deltaTemp }}
         />
         <Stat
           label={t.deltaFeels}
           value={`${sign(stat.d_heat_index)}°`}
           cls={deltaColor(stat.d_heat_index)}
-          info={{ text: si.deltaFeels, href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.heat_index" }}
+          info={{ text: si.deltaFeels, ...NOAA_HI }}
         />
         {hasWbgt ? (
           <Stat
             label={t.deltaWbgt}
             value={`${sign(stat.d_wbgt!)}°`}
             cls={deltaColor(stat.d_wbgt!)}
-            info={{ text: si.deltaWbgt, href: "https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.wet_bulb_globe_temperature" }}
+            info={{ text: si.deltaWbgt, ...STULL_WBGT }}
           />
         ) : (
           <Stat
             label={t.bodyClock}
             value={tz === t.sameTime ? "0h" : `${sign(stat.tz_diff_h)}h`}
             cls="text-violet-300"
-            info={{ text: si.bodyClock, href: "https://xclim.readthedocs.io/en/stable/" }}
+            info={{ text: si.bodyClock }}
           />
         )}
         {hasWbgt && (
@@ -128,7 +137,7 @@ function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
             label={t.bodyClock}
             value={tz === t.sameTime ? "0h" : `${sign(stat.tz_diff_h)}h`}
             cls="text-violet-300"
-            info={{ text: si.bodyClock, href: "https://xclim.readthedocs.io/en/stable/" }}
+            info={{ text: si.bodyClock }}
           />
         )}
       </div>
@@ -207,20 +216,14 @@ export default function MatchCard({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1 text-sm font-semibold">
                 {t.feelsLike}
-                <InfoTooltip
-                  text={si.feelsLike}
-                  href="https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.heat_index"
-                />
+                <InfoTooltip text={si.feelsLike} {...NOAA_HI} />
               </div>
               <div className="text-xs text-slate-400">
                 {t.airTemp(Math.round(match.t2m_at_kickoff))}
                 {match.wbgt_at_kickoff != null && (
                   <span className="ml-2">
                     · WBGT {Math.round(match.wbgt_at_kickoff)}°
-                    <InfoTooltip
-                      text={si.wbgtKickoff}
-                      href="https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.wet_bulb_globe_temperature"
-                    />
+                    <InfoTooltip text={si.wbgtKickoff} {...STULL_WBGT} />
                   </span>
                 )}
               </div>
@@ -246,8 +249,8 @@ export default function MatchCard({
                   }`}
                 >
                   {t.varLabels[k] ?? m.label}
-                  {VAR_INFO_HREF[k] && t.varInfoTexts[k] && (
-                    <InfoTooltip text={t.varInfoTexts[k]} href={VAR_INFO_HREF[k]} />
+                  {t.varInfoTexts[k] && (
+                    <InfoTooltip text={t.varInfoTexts[k]} {...VAR_SOURCE[k]} />
                   )}
                 </button>
               ))}
