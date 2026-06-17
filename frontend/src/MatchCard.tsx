@@ -126,13 +126,13 @@ export default function MatchCard({
                       : "bg-white/10 text-slate-300 hover:bg-white/20"
                   }`}
                 >
-                  {m.label}
+                  {t.varLabels[k] ?? m.label}
                 </button>
               ))}
             </div>
             <div className="rounded-2xl bg-black/20 p-3">
               <div className="mb-1 px-1 text-xs text-slate-400">
-                {t.venueSeries(variables[varKey].label, variables[varKey].unit)}
+                {t.venueSeries(t.varLabels[varKey] ?? variables[varKey].label, variables[varKey].unit)}
               </div>
               <Chart match={match} varKey={varKey} meta={variables[varKey]} forecastStart={forecastStart} />
             </div>
