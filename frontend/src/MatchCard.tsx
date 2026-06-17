@@ -4,7 +4,7 @@ import { flag } from "./flags";
 import { tempColor } from "./colors";
 import Chart from "./Chart";
 
-const sign = (x: number) => (x > 0 ? `+${x}` : `${x}`);
+const sign = (x: number) => { const r = Math.round(x); return r > 0 ? `+${r}` : `${r}`; };
 const deltaColor = (x: number) =>
   x > 0.5 ? "text-orange-300" : x < -0.5 ? "text-sky-300" : "text-slate-300";
 
