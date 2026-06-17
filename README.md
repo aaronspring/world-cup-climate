@@ -78,18 +78,3 @@ The committed `frontend/public/data/` is demo data, so `npm run dev` works witho
 running the backend first. `--source demo` is a physically plausible synthetic
 forecast (smooth lat/lon climate field + diurnal cycle); swap in full server-side IFS
 extraction for live data. The map basemap uses public CARTO tiles (no token).
-
-## Ideas / next steps
-
-- **Heat index via [`xclim`](https://xclim.readthedocs.io/en/stable/api_indicators.html#xclim.indicators.convert.heat_index)** —
-  replace the hand-rolled NOAA Rothfusz formula in `sports.py` with the validated,
-  unit-aware `xclim.indicators.convert.heat_index` (xarray-native, CF metadata).
-- **ERA5 for historical comparison** — bring back `earthmover-public/era5-private`
-  (`single/temporal`) to overlay the **10-year normal** for the same calendar window,
-  so today's match reads as an anomaly vs climatology (hotter/cooler than usual). The
-  ERA5 + stitching code already exists in `era5.py` / `forecast.py` / `climate.py` /
-  `viz.py` from the earlier richer prototype.
-- Precip (`tp`) and solar (`ssrd`): accumulated fields, need deaccumulation along step
-  (logic already in `forecast.py`); add once the simple temperature view is locked in.
-- Swap curated fixtures for a live football fixtures API.
-- Frontend: Streamlit app on top of `ifs.location_series` + `viz_ifs.plot_match`.
