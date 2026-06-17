@@ -10,7 +10,9 @@ coordinates, no stitching.
 
 - **Best estimate**: `step="0 days"` across every 6 hourly init, giving recent
   conditions up to today.
-- **Forecast**: the latest init, steps `0 ... 15 days`, the outlook ahead.
+- **Forecast**: the most recent written init of any cycle (00/06/12/18z), all the
+  steps it carries (15 days for 00z/12z, ~6 days for 06z/18z), the outlook ahead.
+  Shorter runs' NaN-tail steps are dropped, not gated out.
 - Joined into one continuous line per location.
 
 Variables: `2t` (air temperature) and `2d` (dewpoint), combined into relative humidity

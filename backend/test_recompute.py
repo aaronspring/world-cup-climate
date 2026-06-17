@@ -13,7 +13,7 @@ import xarray as xr
 from world_cup_climate.locations import Place
 from recompute import build_match, synth_series, utc_offset_hours, VARIABLES
 from world_cup_climate.fixtures import Match
-from world_cup_climate.ifs import _latest_long_idx, _PROBE_LATLON
+from world_cup_climate.ifs import _latest_init_idx, _PROBE_LATLON
 
 
 def _place(lat: float, lon: float) -> Place:
@@ -55,20 +55,40 @@ def test_build_match_shape():
     assert doc["window"]["start"] <= doc["kickoff_utc"].replace("Z", "") <= doc["window"]["end"]
 
 
-def test_latest_long_idx_skips_short_and_unwritten_inits():
-    """Pick the latest 00z/12z init whose longest step is actually populated."""
+def test_latest_init_idx_takes_newest_written_any_cycle():
+    """Pick the newest init that's written, regardless of cycle hour.
+
+    The 18z run is a short run (no 15-day step) but its step-0 is written, so it
+    wins. An init announced on the axis but not yet written (step-0 NaN) is skipped.
+    """
     times = pd.to_datetime([
-        "2026-06-16T00", "2026-06-16T06", "2026-06-16T12",  # 12z = newest long run
+        "2026-06-16T00", "2026-06-16T12", "2026-06-16T18", "2026-06-17T00",
     ])
     lat, lon = _PROBE_LATLON
-    t2m = np.full((3, 2, 1, 1), 290.0)  # (time, step, lat, lon)
-    t2m[1, -1] = np.nan   # 06z is a short run -> no 15-day step (excluded by hour anyway)
-    t2m[2, -1] = np.nan   # 12z announced but its 15-day step isn't written yet
+    t2m = np.full((4, 2, 1, 1), 290.0)  # (time, step, lat, lon)
+    t2m[2, -1] = np.nan   # 18z short run: 15-day step missing, but step-0 is fine
+    t2m[3, :] = np.nan    # 00z next day announced but not written yet
     ds = xr.Dataset(
         {"2t": (("time", "step", "latitude", "longitude"), t2m)},
         coords={"time": times, "step": [0, 360], "latitude": [lat], "longitude": [lon]},
     )
-    assert _latest_long_idx(ds) == 0  # falls back to the complete 00z run
+    assert _latest_init_idx(ds) == 2  # newest written init = the short 18z run
+
+
+def test_series_reindex_does_not_extrapolate_short_run():
+    """A short run's series must not flat-line a fake tail past its last step.
+
+    Mirrors make_ifs_series_fn's reindex+interpolate: gaps between observations
+    fill, but trailing hours past the data horizon stay NaN.
+    """
+    df = pd.DataFrame(
+        {"t2m_c": [20.0, np.nan, 22.0]},
+        index=pd.to_datetime(["2026-06-20T14", "2026-06-20T15", "2026-06-20T16"]),
+    )
+    times = pd.date_range("2026-06-20T14", "2026-06-20T20", freq="1h")
+    out = df.reindex(times).interpolate("time", limit_area="inside")["t2m_c"]
+    assert out.loc["2026-06-20T15"] == 21.0          # interior gap filled
+    assert out.loc["2026-06-20T17":].isna().all()    # tail past horizon stays NaN
 
 
 if __name__ == "__main__":
