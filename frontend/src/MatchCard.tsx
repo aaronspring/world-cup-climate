@@ -78,7 +78,7 @@ function Stat({ label, value, cls, info }: { label: string; value: string; cls: 
   return (
     <div className="rounded-xl bg-black/20 px-1 py-2">
       <div className={`text-lg font-bold tabular-nums ${cls}`}>{value}</div>
-      <div className="flex items-center justify-center gap-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+      <div className="flex items-center justify-center gap-0.5 text-[10px] tracking-wide text-slate-500">
         {label}
         {info && <InfoTooltip {...info} />}
       </div>
