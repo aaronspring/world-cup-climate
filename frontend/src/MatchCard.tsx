@@ -10,7 +10,8 @@ const deltaColor = (x: number) =>
   x > 0.5 ? "text-orange-300" : x < -0.5 ? "text-sky-300" : "text-slate-300";
 
 // ── InfoTooltip ──────────────────────────────────────────────────────────────
-// Visible ❔ button that opens a popover on hover or click (works on touch too).
+// Visible ⓘ trigger that opens a popover on hover or click (works on touch too).
+// Rendered as a <span> (not a <button>) so it can nest inside other buttons.
 
 interface TooltipInfo { text: string; href: string }
 
@@ -18,16 +19,17 @@ function InfoTooltip({ text, href }: TooltipInfo) {
   const [open, setOpen] = useState(false);
   return (
     <span className="relative inline-flex shrink-0">
-      <button
-        type="button"
+      <span
+        role="button"
+        tabIndex={0}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-        className="cursor-help px-0.5 text-[11px] leading-none text-slate-500 hover:text-slate-300 focus:outline-none"
+        className="cursor-help px-0.5 text-[11px] leading-none opacity-70 hover:opacity-100 focus:outline-none"
         aria-label="More information"
       >
-        ❔
-      </button>
+        ⓘ
+      </span>
       {open && (
         <span
           onMouseEnter={() => setOpen(true)}
@@ -271,21 +273,20 @@ export default function MatchCard({
           <div>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {Object.entries(variables).map(([k, m]) => (
-                <span key={k} className="inline-flex items-center">
-                  <button
-                    onClick={() => setVarKey(k)}
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                      k === varKey
-                        ? "bg-white text-slate-900"
-                        : "bg-white/10 text-slate-300 hover:bg-white/20"
-                    }`}
-                  >
-                    {m.label}
-                  </button>
+                <button
+                  key={k}
+                  onClick={() => setVarKey(k)}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                    k === varKey
+                      ? "bg-white text-slate-900"
+                      : "bg-white/10 text-slate-300 hover:bg-white/20"
+                  }`}
+                >
+                  {m.label}
                   {VAR_INFO[k] && (
                     <InfoTooltip text={VAR_INFO[k].text} href={VAR_INFO[k].href} />
                   )}
-                </span>
+                </button>
               ))}
             </div>
             <div className="rounded-2xl bg-black/20 p-3">
