@@ -1,11 +1,12 @@
 # world-cup-climate
 
-For a World Cup match **today**, compare the climate at the **match venue** with the
+[![Deploy to GitHub Pages](https://github.com/aaronspring/world-cup-climate/actions/workflows/pages.yml/badge.svg)](https://github.com/aaronspring/world-cup-climate/actions/workflows/pages.yml)
+
+For a World Cup 2026 match **today**, compare the climate at the **match venue** with the
 climate in **each competing country's capital** — temperature and how hot it *feels*
 (heat index) — for the days around the match.
 
-**Simple app = IFS only.** One data source, proper coordinates, no stitching:
-
+Data:
 - `spring-data/ecwmf-ifs-15-days-forecast-open` (ECMWF IFS-ENS, open) via [Arraylake](https://docs.earthmover.io).
 - **Best estimate**: `step="0 days"` across every 6-hourly init → recent conditions up to today.
 - **Forecast**: the latest init, steps `0 … 15 days` → the outlook ahead.
@@ -73,13 +74,3 @@ extraction for live data. The map basemap uses public CARTO tiles (no token).
   (logic already in `forecast.py`); add once the simple temperature view is locked in.
 - Swap curated fixtures for a live football fixtures API.
 - Frontend: Streamlit app on top of `ifs.location_series` + `viz_ifs.plot_match`.
-
-## Notes on the data stores
-
-- The **open** IFS repo above has clean CF coordinates — preferred for the app.
-- The **low-latency** subscription repo
-  (`spring-data/ecmwf-ifs-15-day-forecast-low-latency-subscription`) ships *bare integer*
-  dimensions; decoding it required reverse-engineering (longitude offset by 180°, `step`
-  as an index over ECMWF's non-uniform schedule hourly→90h/3-hourly→144h/6-hourly→360h).
-  See `client.py` if you ever need that store; the app does not.
-- Point reads pull one 900×900 spatial chunk per step (~30 s/location), so results are cached.
