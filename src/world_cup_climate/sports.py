@@ -5,8 +5,13 @@ Raw ERA5/IFS units:
   tp       : metres (accumulation)
   ssrd     : J m-2 (accumulation)
 
-We convert to athlete-friendly units and add relative humidity + heat index, which
-together drive heat-stress risk for players.
+We convert to athlete-friendly units and add a suite of heat-stress and
+thermal-comfort indices. Two indices are computed via xclim:
+  - humidex          xclim.indices.humidex
+  - utci             xclim.indices.universal_thermal_climate_index
+
+WBGT is implemented here directly (simplified Liljegren/Stull method) because
+xclim ≤0.61 does not expose wet_bulb_globe_temperature as a standalone index.
 """
 
 from __future__ import annotations
@@ -49,3 +54,100 @@ def heat_index_celsius(t2m_c, rh):
     )
     hi_f = np.where((hi_simple + t_f) / 2 >= 80.0, hi_full, hi_simple)
     return (np.asarray(hi_f) - 32) * 5 / 9
+
+
+# ---------------------------------------------------------------------------
+# xclim-based indices
+# ---------------------------------------------------------------------------
+
+def _da(arr, units: str):
+    """Wrap a numpy array as an xarray DataArray with CF units for xclim."""
+    import xarray as xr
+    return xr.DataArray(np.asarray(arr, dtype=float), attrs={"units": units})
+
+
+def humidex_celsius(t2m_c, d2m_c):
+    """Humidex (°C) via xclim.indices.humidex — Environment Canada's heat-stress index.
+
+    Above 40 is dangerous for physical exertion; above 45, all exercise should stop.
+    """
+    from xclim.indices import humidex
+    return np.asarray(humidex(_da(t2m_c, "degC"), _da(d2m_c, "degC")), dtype=float)
+
+
+def _estimate_mrt(t2m_c, wind_speed_ms, ssrd_wm2=None):
+    """Approximate mean radiant temperature (°C) from solar radiation and wind.
+
+    When no solar data are available (nighttime or analysis period) MRT equals
+    T_air (shade assumption). During daytime, solar load heats the globe above
+    air temperature; wind cools it. Simplified formula following Malchaire et al.
+    (2001) and scaled for a standard 150 mm black globe:
+      ΔTg ≈ 17.5 * (ssrd/1000) - 2.5 * sqrt(V)   [°C above air temp]
+    """
+    if ssrd_wm2 is None:
+        return t2m_c.copy() if hasattr(t2m_c, "copy") else np.array(t2m_c)
+    solar = np.clip(np.asarray(ssrd_wm2, dtype=float), 0, None)
+    wind = np.maximum(np.asarray(wind_speed_ms, dtype=float), 0.1)
+    delta = 17.5 * (solar / 1000.0) - 2.5 * np.sqrt(wind)
+    return np.asarray(t2m_c, dtype=float) + np.maximum(delta, 0.0)
+
+
+def utci_celsius(t2m_c, rh, wind_speed_ms, ssrd_wm2=None):
+    """Universal Thermal Climate Index (°C) via xclim.indices.universal_thermal_climate_index.
+
+    The IOC-endorsed gold standard for outdoor thermal stress. Combines dry-bulb
+    temperature, humidity, wind, and mean radiant temperature (MRT). When ssrd is
+    available, MRT is estimated from solar load and wind; otherwise shade is assumed.
+    """
+    from xclim.indices import universal_thermal_climate_index
+    mrt_c = _estimate_mrt(t2m_c, wind_speed_ms, ssrd_wm2)
+    return np.asarray(
+        universal_thermal_climate_index(
+            _da(t2m_c, "degC"),
+            _da(rh, "%"),
+            _da(wind_speed_ms, "m s-1"),
+            mrt=_da(mrt_c, "degC"),
+        ), dtype=float
+    )
+
+
+# ---------------------------------------------------------------------------
+# WBGT — manual implementation (not yet in xclim ≤0.61)
+# ---------------------------------------------------------------------------
+
+def wbgt_celsius(t2m_c, rh, wind_speed_ms, ssrd_wm2=None):
+    """Outdoor Wet Bulb Globe Temperature (°C).
+
+    WBGT = 0.7·NWB + 0.2·GT + 0.1·DBT  (ISO 7243 / Yaglou & Minard 1957)
+
+    NWB estimated via Stull (2011); GT estimated via Malchaire et al. (2001).
+    Accurate to roughly ±1°C under typical summer conditions.
+
+    FIFA cooling-break protocol:
+      < 28°C  normal play
+      28–32°C cooling/water breaks may be authorised
+      > 32°C  breaks mandatory under IFAB laws
+    """
+    t2m = np.asarray(t2m_c, dtype=float)
+    rh_ = np.asarray(rh, dtype=float)
+
+    # Natural wet-bulb temperature: Stull (2011), accurate to ±0.65°C for RH 5–99%.
+    tw = (
+        t2m * np.arctan(0.151977 * (rh_ + 8.313659) ** 0.5)
+        + np.arctan(t2m + rh_)
+        - np.arctan(rh_ - 1.676331)
+        + 0.00391838 * rh_ ** 1.5 * np.arctan(0.023101 * rh_)
+        - 4.686035
+    )
+
+    # Globe temperature: solar heats globe, wind cools it.
+    # When ssrd is unavailable (night / analysis period), globe ≈ air temp + 2°C.
+    if ssrd_wm2 is not None:
+        solar = np.clip(np.asarray(ssrd_wm2, dtype=float), 0, None)
+        wind = np.maximum(np.asarray(wind_speed_ms, dtype=float), 0.1)
+        tg = t2m + 17.5 * (solar / 1000.0) - 2.5 * np.sqrt(wind)
+        tg = np.clip(tg, t2m, t2m + 30.0)
+    else:
+        tg = t2m + 2.0
+
+    return 0.7 * tw + 0.2 * tg + 0.1 * t2m
