@@ -21,6 +21,8 @@ export interface Venue {
   country: string;
   lat: number;
   lon: number;
+  roof?: "open" | "retractable" | "fixed";
+  air_conditioned?: boolean;
 }
 
 export interface Pin {

@@ -61,6 +61,11 @@ const XCLIM = (anchor: string): TooltipInfo["href"] =>
   `https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.${anchor}`;
 const NOAA_HI = { href: "https://www.weather.gov/media/ffc/ta_htindx.PDF", linkLabel: "NOAA" };
 const STULL_WBGT = { href: "https://doi.org/10.1175/JAMC-D-11-0143.1", linkLabel: "Stull 2011" };
+// FIFA's official player-welfare / heat statement for the 2026 tournament.
+const FIFA_HEAT = {
+  href: "https://inside.fifa.com/organisation/news/hydration-breaks-world-cup-2026-player-welfare",
+  linkLabel: "FIFA",
+};
 
 const VAR_SOURCE: Record<string, { href?: string; linkLabel?: string }> = {
   t2m:        {},
@@ -197,8 +202,14 @@ export default function MatchCard({
               <span>{flag(match.team_b)}</span>
               <span className="truncate">{match.team_b}</span>
             </div>
-            <div className="mt-1 text-sm text-slate-400">
-              {match.venue.stadium} · {match.venue.city}
+            <div className="mt-1 flex items-center gap-1 text-sm text-slate-400">
+              <span className="truncate">{match.venue.stadium} · {match.venue.city}</span>
+              {match.venue.air_conditioned && (
+                <span className="inline-flex shrink-0 items-center" aria-label={t.airConLabel} title={t.airConLabel}>
+                  ❄️
+                  <InfoTooltip text={t.airConTip} {...FIFA_HEAT} />
+                </span>
+              )}
             </div>
             <div className="text-sm text-slate-400">
               {t.kickoff.charAt(0).toUpperCase() + t.kickoff.slice(1)} {match.kickoff_local} local
