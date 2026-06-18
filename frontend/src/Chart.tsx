@@ -9,6 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import type { Match, VarMeta } from "./types";
+import { matchColors, VENUE_COLOR } from "./colors";
 import { useLang } from "./LangContext";
 import { T, LOCALE } from "./i18n";
 
@@ -55,6 +56,7 @@ export default function Chart({
     a: team_a[varKey][i],
     b: team_b[varKey][i],
   }));
+  const [colorA, colorB] = matchColors(match.team_a, match.team_b);
   const kickoff = match.kickoff_utc;
   // one tick per UTC midnight so the axis reads as dates, not repeated hours
   const dayTicks = time.filter((t) => new Date(t).getUTCHours() === 0);
@@ -70,8 +72,8 @@ export default function Chart({
       <ComposedChart data={data} margin={{ top: 8, right: 6, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="venueFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={meta.color} stopOpacity={0.28} />
-            <stop offset="100%" stopColor={meta.color} stopOpacity={0} />
+            <stop offset="0%" stopColor={VENUE_COLOR} stopOpacity={0.28} />
+            <stop offset="100%" stopColor={VENUE_COLOR} stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis
@@ -137,9 +139,9 @@ export default function Chart({
             />
           );
         })}
-        <Area type="monotone" dataKey="venue" name={t.chart.venue} stroke={meta.color} strokeWidth={2.4} fill="url(#venueFill)" dot={false} />
-        <Line type="monotone" dataKey="a" name={match.stats.team_a.home} stroke="#38bdf8" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />
-        <Line type="monotone" dataKey="b" name={match.stats.team_b.home} stroke="#c084fc" strokeWidth={1.6} strokeDasharray="5 3" dot={false} />
+        <Area type="monotone" dataKey="venue" name={t.chart.venue} stroke={VENUE_COLOR} strokeWidth={2.4} fill="url(#venueFill)" dot={false} />
+        <Line type="monotone" dataKey="a" name={match.stats.team_a.home} stroke={colorA} strokeWidth={1.8} strokeDasharray="5 3" dot={false} />
+        <Line type="monotone" dataKey="b" name={match.stats.team_b.home} stroke={colorB} strokeWidth={1.8} strokeDasharray="5 3" dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );
