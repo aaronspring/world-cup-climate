@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Match, TeamStat, VarMeta } from "./types";
 import { flag } from "./flags";
@@ -17,13 +17,17 @@ interface TooltipInfo { text: string; href?: string; linkLabel?: string }
 
 function InfoTooltip({ text, href, linkLabel }: TooltipInfo) {
   const [open, setOpen] = useState(false);
+  // ponytail: 0.5s close delay so the mouse can cross the gap to click the link
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const cancelClose = () => clearTimeout(closeTimer.current);
+  const scheduleClose = () => { cancelClose(); closeTimer.current = setTimeout(() => setOpen(false), 500); };
   return (
     <span className="relative inline-flex shrink-0">
       <span
         role="button"
         tabIndex={0}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
+        onMouseEnter={() => { cancelClose(); setOpen(true); }}
+        onMouseLeave={scheduleClose}
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
         className="cursor-help px-0.5 text-[11px] leading-none opacity-70 hover:opacity-100 focus:outline-none"
         aria-label="More information"
@@ -32,8 +36,8 @@ function InfoTooltip({ text, href, linkLabel }: TooltipInfo) {
       </span>
       {open && (
         <span
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
           className="pointer-events-auto absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-xl bg-slate-900 px-3.5 py-3 text-xs leading-relaxed text-slate-200 shadow-2xl ring-1 ring-white/10"
         >
           {text}
@@ -212,7 +216,7 @@ export default function MatchCard({
               )}
             </div>
             <div className="text-sm text-slate-400">
-              {t.kickoff.charAt(0).toUpperCase() + t.kickoff.slice(1)} {match.kickoff_local} local
+              {t.kickoff.charAt(0).toUpperCase() + t.kickoff.slice(1)} {match.kickoff_local} {t.localTime}
             </div>
           </div>
 

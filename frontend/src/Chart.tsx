@@ -108,7 +108,7 @@ export default function Chart({
           x={kickoff}
           stroke="#facc15"
           strokeDasharray="4 3"
-          label={{ value: t.kickoff, fill: "#facc15", fontSize: 10, position: "insideTopRight" }}
+          label={{ value: t.kickoff, fill: "#facc15", fontSize: 10, position: "insideTopRight", dy: -12 }}
         />
         {(THRESHOLDS[varKey] ?? []).map((t) => (
           <ReferenceLine key={t.y} y={t.y} stroke="rgba(255,255,255,0.18)" strokeDasharray="3 3" />

@@ -24,6 +24,7 @@ export interface Translations {
   venueSeries: (label: string, unit: string) => string;
   forecast: string;
   kickoff: string;
+  localTime: string;
   deltaTemp_tip: string;
   deltaFeels_tip: string;
   feelsLikeTip: string;
@@ -66,6 +67,7 @@ export const T: Record<Lang, Translations> = {
     venueSeries: (label, unit) => `${label} (${unit}) · venue (solid) vs home cities (dashed)`,
     forecast: "forecast",
     kickoff: "kickoff",
+    localTime: "local",
     deltaTemp_tip: "Air temperature difference: home city vs. venue around kickoff. Orange = hotter at home, blue = cooler.",
     deltaFeels_tip: "Heat-index difference: accounts for humidity — how much hotter or cooler it feels at home vs. the venue.",
     feelsLikeTip: "Heat index at kickoff — combines air temperature and humidity to show how hot it actually feels to players on the pitch. Above 32°C is considered stressful for athletes.",
@@ -123,6 +125,7 @@ export const T: Record<Lang, Translations> = {
     venueSeries: (label, unit) => `${label} (${unit}) · Spielort (durchgehend) vs. Heimstädte (gestrichelt)`,
     forecast: "Vorhersage",
     kickoff: "Anstoß",
+    localTime: "lokal",
     deltaTemp_tip: "Temperaturdifferenz: Heimatstadt vs. Spielort beim Anstoß. Orange = zu Hause wärmer, blau = kühler.",
     deltaFeels_tip: "Hitzeindex-Differenz: berücksichtigt Luftfeuchtigkeit – wie viel wärmer oder kühler es sich zu Hause im Vergleich zum Spielort anfühlt.",
     feelsLikeTip: "Hitzeindex beim Anstoß – kombiniert Lufttemperatur und Luftfeuchtigkeit. Über 32 °C gilt als belastend für Sportler.",
