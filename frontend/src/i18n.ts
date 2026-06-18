@@ -24,10 +24,13 @@ export interface Translations {
   venueSeries: (label: string, unit: string) => string;
   forecast: string;
   kickoff: string;
+  localTime: string;
   deltaTemp_tip: string;
   deltaFeels_tip: string;
   feelsLikeTip: string;
   deltaWbgt: string;
+  airConLabel: string;
+  airConTip: string;
   statInfoTexts: {
     deltaTemp: string;
     deltaFeels: string;
@@ -64,10 +67,13 @@ export const T: Record<Lang, Translations> = {
     venueSeries: (label, unit) => `${label} (${unit}) · venue (solid) vs home cities (dashed)`,
     forecast: "forecast",
     kickoff: "kickoff",
+    localTime: "local",
     deltaTemp_tip: "Air temperature difference: home city vs. venue around kickoff. Orange = hotter at home, blue = cooler.",
     deltaFeels_tip: "Heat-index difference: accounts for humidity — how much hotter or cooler it feels at home vs. the venue.",
     feelsLikeTip: "Heat index at kickoff — combines air temperature and humidity to show how hot it actually feels to players on the pitch. Above 32°C is considered stressful for athletes.",
     deltaWbgt: "Δ WBGT",
+    airConLabel: "Air-conditioned stadium",
+    airConTip: "This venue has a retractable roof and a climate-controlled bowl. Operators can close the roof and run air conditioning to shield players and fans from heat — expected for hot daytime kickoffs. FIFA also mandates a 3-minute hydration break in each half of every match, regardless of roof or temperature.",
     statInfoTexts: {
       deltaTemp: "Air-temperature difference between home city and venue at kickoff. Orange = venue is hotter than home, blue = cooler.",
       deltaFeels: "Heat-index difference between home and venue. Accounts for humidity — a dry 35°C and a humid 30°C can feel equally bad.",
@@ -119,10 +125,13 @@ export const T: Record<Lang, Translations> = {
     venueSeries: (label, unit) => `${label} (${unit}) · Spielort (durchgehend) vs. Heimstädte (gestrichelt)`,
     forecast: "Vorhersage",
     kickoff: "Anstoß",
+    localTime: "lokal",
     deltaTemp_tip: "Temperaturdifferenz: Heimatstadt vs. Spielort beim Anstoß. Orange = zu Hause wärmer, blau = kühler.",
     deltaFeels_tip: "Hitzeindex-Differenz: berücksichtigt Luftfeuchtigkeit – wie viel wärmer oder kühler es sich zu Hause im Vergleich zum Spielort anfühlt.",
     feelsLikeTip: "Hitzeindex beim Anstoß – kombiniert Lufttemperatur und Luftfeuchtigkeit. Über 32 °C gilt als belastend für Sportler.",
     deltaWbgt: "Δ WBGT",
+    airConLabel: "Klimatisiertes Stadion",
+    airConTip: "Dieser Spielort hat ein schließbares Dach und einen klimatisierten Innenraum. Das Dach kann geschlossen und die Klimaanlage betrieben werden, um Spieler und Fans vor Hitze zu schützen — bei heißen Anstößen am Tag zu erwarten. Die FIFA schreibt zudem in jeder Halbzeit jedes Spiels eine 3-minütige Trinkpause vor, unabhängig von Dach oder Temperatur.",
     statInfoTexts: {
       deltaTemp: "Temperaturdifferenz zwischen Heimatstadt und Spielort beim Anstoß. Orange = Spielort heißer als zu Hause, blau = kühler.",
       deltaFeels: "Hitzeindex-Differenz zwischen Heimatstadt und Spielort. Berücksichtigt Luftfeuchtigkeit – trockene 35°C und schwüle 30°C können sich gleich schlimm anfühlen.",

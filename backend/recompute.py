@@ -248,6 +248,8 @@ def build_match(m: Match, series_fn) -> dict:
             "country": v.country,
             "lat": v.lat,
             "lon": v.lon,
+            "roof": v.roof,
+            "air_conditioned": v.air_conditioned,
         },
         "t2m_at_kickoff":        round(window_mean(times, sv["t2m"],        ko), 1),
         "heat_index_at_kickoff": round(window_mean(times, sv["heat_index"], ko), 1),

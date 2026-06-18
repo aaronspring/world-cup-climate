@@ -19,6 +19,8 @@ class Place:
     country: str
     lat: float         # degrees north
     lon: float         # degrees east, -180..180 (convert with % 360 at read time)
+    roof: str = "open"            # "open" | "retractable" | "fixed" (venues only)
+    air_conditioned: bool = False  # roof closes AND the bowl is climate-controlled
 
 
 @lru_cache(maxsize=1)
@@ -35,6 +37,8 @@ def venue(key: str) -> Place:
         country=v["country"],
         lat=v["lat"],
         lon=v["lon"],
+        roof=v.get("roof", "open"),
+        air_conditioned=v.get("air_conditioned", False),
     )
 
 

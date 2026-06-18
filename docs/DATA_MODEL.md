@@ -49,7 +49,9 @@ Scope: 72 group-stage matches (2026-06-11 → 2026-06-27). No knockouts (teams T
       "city":    "Atlanta",
       "country": "United States",
       "stadium": "Mercedes-Benz Stadium",
-      "lat": 33.755, "lon": -84.401          // stadium coordinates, decimal degrees
+      "lat": 33.755, "lon": -84.401,         // stadium coordinates, decimal degrees
+      "roof": "retractable",                 // "open" | "retractable" | "fixed"
+      "air_conditioned": true                // roof closes AND bowl is climate-controlled
     }
   },
   "capitals": {
@@ -63,13 +65,20 @@ Scope: 72 group-stage matches (2026-06-11 → 2026-06-27). No knockouts (teams T
 
 | Section | Key | Value fields |
 |---------|-----|--------------|
-| `venues` | venue slug (kebab-ish, e.g. `estadio_azteca`) | `city`, `country`, `stadium`, `lat`, `lon` |
+| `venues` | venue slug (kebab-ish, e.g. `estadio_azteca`) | `city`, `country`, `stadium`, `lat`, `lon`, `roof`, `air_conditioned` |
 | `capitals` | country/team display name | `capital`, `lat`, `lon` |
 
 - `lat`/`lon` are decimal degrees, WGS84; `lon` is the conventional −180..180 (not the
   IFS-store bare-integer convention — see the IFS forecast-store notes).
 - 16 venues across US/Mexico/Canada. `capitals` covers every team in `fixtures.json`
   plus extras; unused capital entries are harmless.
+- `roof` is `"open"`, `"retractable"`, or `"fixed"`. `air_conditioned` is `true` only when
+  the roof can be closed **and** the bowl/pitch is climate-controlled — for 2026 that is
+  Atlanta (`mercedes_benz`), Dallas (`att_stadium`), and Houston (`nrg_stadium`). Vancouver
+  (`bc_place`) has a retractable roof but no AC; LA (`sofi`) has a fixed canopy with open
+  sides. The webapp shows a ❄️ badge on air-conditioned venues. These are operator
+  capabilities, not a per-match schedule — FIFA mandates hydration breaks in every match
+  regardless ([player-welfare statement](https://inside.fifa.com/organisation/news/hydration-breaks-world-cup-2026-player-welfare)).
 
 ## Coupling the two
 

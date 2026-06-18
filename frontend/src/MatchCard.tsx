@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Match, TeamStat, VarMeta } from "./types";
 import { flag } from "./flags";
@@ -15,26 +16,42 @@ const deltaColor = (x: number) =>
 
 interface TooltipInfo { text: string; href?: string; linkLabel?: string }
 
+const TIP_W = 256; // w-64
 function InfoTooltip({ text, href, linkLabel }: TooltipInfo) {
-  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ left: number; bottom: number } | null>(null);
+  const iconRef = useRef<HTMLSpanElement>(null);
+  // ponytail: 0.5s close delay so the mouse can cross the gap to click the link
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const cancelClose = () => clearTimeout(closeTimer.current);
+  const scheduleClose = () => { cancelClose(); closeTimer.current = setTimeout(() => setPos(null), 500); };
+  // ponytail: fixed-position portal + viewport clamp so the tip never clips on
+  // the card's overflow-hidden edge nor spills off-screen
+  const place = () => {
+    const r = iconRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const left = Math.min(Math.max(8, r.left + r.width / 2 - TIP_W / 2), window.innerWidth - TIP_W - 8);
+    setPos({ left, bottom: window.innerHeight - r.top + 8 });
+  };
   return (
     <span className="relative inline-flex shrink-0">
       <span
+        ref={iconRef}
         role="button"
         tabIndex={0}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        onMouseEnter={() => { cancelClose(); place(); }}
+        onMouseLeave={scheduleClose}
+        onClick={(e) => { e.stopPropagation(); pos ? setPos(null) : place(); }}
         className="cursor-help px-0.5 text-[11px] leading-none opacity-70 hover:opacity-100 focus:outline-none"
         aria-label="More information"
       >
         ⓘ
       </span>
-      {open && (
+      {pos && createPortal(
         <span
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
-          className="pointer-events-auto absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-xl bg-slate-900 px-3.5 py-3 text-xs leading-relaxed text-slate-200 shadow-2xl ring-1 ring-white/10"
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
+          style={{ left: pos.left, bottom: pos.bottom, width: TIP_W }}
+          className="pointer-events-auto fixed z-50 rounded-xl bg-slate-900 px-3.5 py-3 text-xs leading-relaxed text-slate-200 shadow-2xl ring-1 ring-white/10"
         >
           {text}
           {href && (
@@ -48,7 +65,8 @@ function InfoTooltip({ text, href, linkLabel }: TooltipInfo) {
               {linkLabel ?? "xclim docs"} ↗
             </a>
           )}
-        </span>
+        </span>,
+        document.body,
       )}
     </span>
   );
@@ -61,6 +79,11 @@ const XCLIM = (anchor: string): TooltipInfo["href"] =>
   `https://xclim.readthedocs.io/en/stable/indices.html#xclim.indices.${anchor}`;
 const NOAA_HI = { href: "https://www.weather.gov/media/ffc/ta_htindx.PDF", linkLabel: "NOAA" };
 const STULL_WBGT = { href: "https://doi.org/10.1175/JAMC-D-11-0143.1", linkLabel: "Stull 2011" };
+// FIFA's official player-welfare / heat statement for the 2026 tournament.
+const FIFA_HEAT = {
+  href: "https://inside.fifa.com/organisation/news/hydration-breaks-world-cup-2026-player-welfare",
+  linkLabel: "FIFA",
+};
 
 const VAR_SOURCE: Record<string, { href?: string; linkLabel?: string }> = {
   t2m:        {},
@@ -197,11 +220,17 @@ export default function MatchCard({
               <span>{flag(match.team_b)}</span>
               <span className="truncate">{match.team_b}</span>
             </div>
-            <div className="mt-1 text-sm text-slate-400">
-              {match.venue.stadium} · {match.venue.city}
+            <div className="mt-1 flex items-center gap-1 text-sm text-slate-400">
+              <span className="truncate">{match.venue.stadium} · {match.venue.city}</span>
+              {match.venue.air_conditioned && (
+                <span className="inline-flex shrink-0 items-center" aria-label={t.airConLabel} title={t.airConLabel}>
+                  ❄️
+                  <InfoTooltip text={t.airConTip} {...FIFA_HEAT} />
+                </span>
+              )}
             </div>
             <div className="text-sm text-slate-400">
-              {t.kickoff.charAt(0).toUpperCase() + t.kickoff.slice(1)} {match.kickoff_local} local
+              {t.kickoff.charAt(0).toUpperCase() + t.kickoff.slice(1)} {match.kickoff_local} {t.localTime}
             </div>
           </div>
 
