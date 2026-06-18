@@ -80,3 +80,15 @@ The committed `frontend/public/data/` is demo data, so `npm run dev` works witho
 running the backend first. `--source demo` is a physically plausible synthetic
 forecast (smooth lat/lon climate field + diurnal cycle); swap in full server-side IFS
 extraction for live data. The map basemap uses public CARTO tiles (no token).
+
+## Related projects
+
+Other World Cup 2026 climate/weather efforts. Most use historical climatology or
+static analysis; this app's angle is **live IFS forecast data driving per-match
+kickoff conditions** (plus the ❄️ badge for air-conditioned retractable-roof venues).
+
+- [Tales of the Stands — Climate Tool](https://talesofthestands.com/world-cup-2026-climate-tool/) — interactive stadium comparison (temperature / humidity / altitude), climatology-based.
+- [ClimateCup.org](https://climatecup.org/) — interactive map tracing every World Cup 1930→2022 (temp anomalies, CO₂), then 2026.
+- [Climate Central — "Off Your Game"](https://www.climatecentral.org/climate-matters/world-cup-matches) — per-stadium/match/team climate data hub ([stadiums](https://www.climatecentral.org/climate-matters/world-cup-stadiums)).
+- [World Weather Attribution](https://www.worldweatherattribution.org/climate-change-big-player-at-fifa-world-cup-2026/) — WBGT increase per venue.
+- Forecast/analysis articles: [Bloomberg](https://www.bloomberg.com/graphics/2026-fifa-world-cup-games-weather/), [AccuWeather](https://www.accuweather.com/en/sports/live-news/world-cup-2026-weather-updates-forecasts-for-key-matches-stadium-conditions-and-fan-impacts/1898671).
