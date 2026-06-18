@@ -25,6 +25,14 @@ const THRESHOLDS: Record<string, { y: number; key: string }[]> = {
   d2m:        [{ y: 20, key: "muggy" }, { y: 25, key: "tropical" }],
 };
 
+// label sits centred in the band above the line (topmost band: offset up by half the gap below)
+type Threshold = { y: number; key: string };
+const labelY = (arr: Threshold[], i: number) => {
+  const next = arr[i + 1]?.y;
+  const prev = arr[i - 1]?.y;
+  return next != null ? (arr[i].y + next) / 2 : arr[i].y + (arr[i].y - (prev ?? arr[i].y)) / 2;
+};
+
 export default function Chart({
   match,
   varKey,
@@ -76,7 +84,13 @@ export default function Chart({
         />
         <YAxis
           width={40}
-          domain={["auto", "auto"]}
+          // ponytail: lift the top so the first threshold band above the data
+          // (e.g. humidex "dangerous") and its label stay visible
+          domain={["auto", (dataMax: number) => {
+            const arr = THRESHOLDS[varKey] ?? [];
+            const i = arr.findIndex((t) => t.y > dataMax);
+            return i >= 0 ? Math.ceil(labelY(arr, i)) + 2 : Math.ceil(dataMax) + 1;
+          }]}
           tickFormatter={(v: number) => `${Math.round(v)}${meta.unit}`}
           tick={{ fill: "#7c869a", fontSize: 10 }}
           axisLine={false}
@@ -114,14 +128,10 @@ export default function Chart({
           <ReferenceLine key={t.y} y={t.y} stroke="rgba(255,255,255,0.18)" strokeDasharray="3 3" />
         ))}
         {(THRESHOLDS[varKey] ?? []).map((t, i, arr) => {
-          // place the label centred in the band above this line (top band: offset up)
-          const next = arr[i + 1]?.y;
-          const prev = arr[i - 1]?.y;
-          const labelY = next != null ? (t.y + next) / 2 : t.y + (t.y - (prev ?? t.y)) / 2;
           return (
             <ReferenceLine
               key={`${t.y}-label`}
-              y={labelY}
+              y={labelY(arr, i)}
               stroke="none"
               label={{ value: thLabels[t.key] ?? t.key, position: "insideRight", fill: "#7c869a", fontSize: 9 }}
             />
