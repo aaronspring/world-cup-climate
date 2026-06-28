@@ -7,9 +7,11 @@ fixtures.json ──venue──▶ locations.json["venues"]
               ──team_a/team_b──▶ locations.json["capitals"]
 ```
 
-Every `team_a`/`team_b` in fixtures **must** exist as a key in `capitals`, and every
-`venue` **must** exist as a key in `venues`. (Enforced informally; see the validation
-snippet at the bottom.)
+Every `venue` in fixtures **must** exist as a key in `venues`. Group-stage and
+Round-of-32 `team_a`/`team_b` **must** exist as a key in `capitals`. Round-of-16 teams
+are **bracket placeholders** (`"South Africa/Canada"`, the winner of an earlier match)
+with no capital — those matches render venue-only. (Enforced informally; see the
+validation snippet at the bottom.)
 
 ## `data/fixtures.json`
 
@@ -34,11 +36,13 @@ snippet at the bottom.)
 |-------|------|-------|
 | `date` | string | Calendar day at the venue. `kickoff_utc` can be the following UTC day for evening kickoffs. |
 | `kickoff_utc` | string | ISO 8601, always `Z`. See `FIXTURES.md` for how it was derived. |
-| `stage` | string | Currently group labels; would extend to "Round of 32" etc. |
-| `team_a`, `team_b` | string | Exact `capitals` keys. Naming follows the source (`USA`, `South Korea`, `Czechia`, `Turkiye`, `DR Congo`, `Ivory Coast`). |
+| `stage` | string | `"Group A"`..`"Group L"`, `"Round of 32"`, `"Round of 16"`. |
+| `team_a`, `team_b` | string | Group-stage and Round-of-32: exact `capitals` keys (naming follows the source: `USA`, `South Korea`, `Czechia`, `Turkiye`, `DR Congo`, `Ivory Coast`). Round-of-16: a `"A/B"` bracket placeholder (no capital). |
 | `venue` | string | Exact `venues` key. |
 
-Scope: 72 group-stage matches (2026-06-11 → 2026-06-27). No knockouts (teams TBD).
+Scope: 72 group-stage matches (2026-06-11 → 2026-06-27), 16 Round-of-32 matches
+(2026-06-28 → 2026-07-03, real teams) and 8 Round-of-16 matches (2026-07-04 →
+2026-07-07, placeholder teams). Quarter-finals onward are not included yet.
 
 ## `data/locations.json`
 
@@ -83,14 +87,24 @@ Scope: 72 group-stage matches (2026-06-11 → 2026-06-27). No knockouts (teams T
 ## Coupling the two
 
 The app pairs each match's two team capitals and its venue to compare "home climate" vs
-"match-day climate". The only contract is **key existence**:
+"match-day climate". A team's capital must exist **unless** it is a knockout bracket
+placeholder (an `"A/B"` slot), in which case that side is rendered venue-only. The
+contract is **key existence**:
 
 ```python
 import json
 loc = json.load(open("data/locations.json"))
 fx  = json.load(open("data/fixtures.json"))
 caps, ven = set(loc["capitals"]), set(loc["venues"])
+placeholder = lambda t: "/" in t  # bracket slot, winner of an earlier match
 for m in fx["matches"]:
-    assert m["team_a"] in caps and m["team_b"] in caps, m
+    for t in (m["team_a"], m["team_b"]):
+        assert placeholder(t) or t in caps, m
     assert m["venue"] in ven, m
 ```
+
+In the precomputed per-match doc (`matches/{id}.json`, see `ARCHITECTURE.md` §4), a
+placeholder team has **no** entry under `series.team_a`/`series.team_b` or
+`stats.team_a`/`stats.team_b` — the venue series, kickoff numbers, and the map pin are
+always present. The frontend keys off the absence of those entries to drop the home
+comparison and label the chart "venue forecast".

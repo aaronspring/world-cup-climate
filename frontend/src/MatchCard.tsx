@@ -259,10 +259,16 @@ export default function MatchCard({
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <TeamColumn team={match.team_a} stat={match.stats.team_a} />
-            <TeamColumn team={match.team_b} stat={match.stats.team_b} />
-          </div>
+          {match.stats.team_a || match.stats.team_b ? (
+            <div className="flex gap-3">
+              {match.stats.team_a && <TeamColumn team={match.team_a} stat={match.stats.team_a} />}
+              {match.stats.team_b && <TeamColumn team={match.team_b} stat={match.stats.team_b} />}
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-white/5 px-3.5 py-3 text-sm text-slate-400">
+              {t.knockoutTbd}
+            </div>
+          )}
 
           {/* Chart variable selector */}
           <div>
@@ -286,7 +292,10 @@ export default function MatchCard({
             </div>
             <div className="rounded-2xl bg-black/20 p-3">
               <div className="mb-1 px-1 text-xs text-slate-400">
-                {t.venueSeries(t.varLabels[varKey] ?? variables[varKey].label, variables[varKey].unit)}
+                {(match.series.team_a || match.series.team_b ? t.venueSeries : t.venueOnlySeries)(
+                  t.varLabels[varKey] ?? variables[varKey].label,
+                  variables[varKey].unit,
+                )}
               </div>
               <Chart match={match} varKey={varKey} meta={variables[varKey]} forecastStart={forecastStart} />
             </div>

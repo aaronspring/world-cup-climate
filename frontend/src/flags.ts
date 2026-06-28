@@ -18,7 +18,12 @@ const SPECIAL: Record<string, string> = {
   Scotland: "🏴\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}",
 };
 
+// A knockout bracket placeholder like "South Africa/Canada" (winner of an
+// earlier match) — not yet a single team, so it has no flag or home capital.
+export const isPlaceholderTeam = (team: string): boolean => team.includes("/");
+
 export function flag(team: string): string {
+  if (isPlaceholderTeam(team)) return "🏆";
   if (SPECIAL[team]) return SPECIAL[team];
   const code = ISO[team];
   if (!code) return "🏳️";

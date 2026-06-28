@@ -10,7 +10,7 @@ export interface Translations {
   errorTitle: string;
   errorCmd: string;
   errorCmdSuffix: string;
-  matchCount: (n: number, day: number) => string;
+  matchCount: (n: number, when: string) => string;
   tempLegend: string;
   close: string;
   feelsLike: string;
@@ -22,6 +22,8 @@ export interface Translations {
   sameTime: string;
   vsVenue: string;
   venueSeries: (label: string, unit: string) => string;
+  venueOnlySeries: (label: string, unit: string) => string;
+  knockoutTbd: string;
   forecast: string;
   kickoff: string;
   localTime: string;
@@ -53,7 +55,7 @@ export const T: Record<Lang, Translations> = {
     errorTitle: "Couldn't load forecast data",
     errorCmd: "Run",
     errorCmdSuffix: "first.",
-    matchCount: (n, day) => `${n} matches · Jun ${day}`,
+    matchCount: (n, when) => `${n} matches · ${when}`,
     tempLegend: "Temperature at kickoff",
     close: "close ✕",
     feelsLike: "Feels like at kickoff",
@@ -65,6 +67,8 @@ export const T: Record<Lang, Translations> = {
     sameTime: "same time",
     vsVenue: "vs venue",
     venueSeries: (label, unit) => `${label} (${unit}) · venue (solid) vs home cities (dashed)`,
+    venueOnlySeries: (label, unit) => `${label} (${unit}) · venue forecast`,
+    knockoutTbd: "Teams decided after the previous round — showing the venue forecast.",
     forecast: "forecast",
     kickoff: "kickoff",
     localTime: "local",
@@ -111,7 +115,7 @@ export const T: Record<Lang, Translations> = {
     errorTitle: "Vorhersagedaten konnten nicht geladen werden",
     errorCmd: "Zuerst ausführen:",
     errorCmdSuffix: "",
-    matchCount: (n, day) => `${n} Spiele · Jun ${day}`,
+    matchCount: (n, when) => `${n} Spiele · ${when}`,
     tempLegend: "Temperatur beim Anstoß",
     close: "Schließen ✕",
     feelsLike: "Gefühlte Temperatur beim Anstoß",
@@ -123,6 +127,8 @@ export const T: Record<Lang, Translations> = {
     sameTime: "gleiche Zeit",
     vsVenue: "vs. Spielort",
     venueSeries: (label, unit) => `${label} (${unit}) · Spielort (durchgehend) vs. Heimstädte (gestrichelt)`,
+    venueOnlySeries: (label, unit) => `${label} (${unit}) · Vorhersage für den Spielort`,
+    knockoutTbd: "Teams stehen nach der vorherigen Runde fest — gezeigt wird die Vorhersage für den Spielort.",
     forecast: "Vorhersage",
     kickoff: "Anstoß",
     localTime: "lokal",

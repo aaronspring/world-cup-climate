@@ -1,8 +1,8 @@
 # How `data/fixtures.json` was sourced
 
 `data/fixtures.json` holds all **72 group-stage matches** of the 2026 FIFA World Cup
-(2026-06-11 → 2026-06-27). Knockout matches are excluded: their teams are TBD, so they
-can't be keyed to a national capital, which the app requires.
+(2026-06-11 → 2026-06-27) plus the first two knockout rounds: **16 Round-of-32 matches**
+(2026-06-28 → 2026-07-03) and **8 Round-of-16 matches** (2026-07-04 → 2026-07-07).
 
 ## Sources
 
@@ -43,6 +43,37 @@ USA–Paraguay (01:00 UTC), and every June 14–15 match.
 - **South Korea vs Czechia (Jun 11, Guadalajara)** — missing from Al Jazeera's list;
   added from the KickoffAdventures slot (19:00 local → 01:00 UTC Jun 12).
 
+## Knockout rounds (Round of 32 + Round of 16)
+
+- **Schedule (dates, venues, kickoff times)** — the predetermined FIFA knockout bracket
+  is fixed before the group stage ends, sourced from the public schedules
+  ([Al Jazeera](https://www.aljazeera.com/sports/2026/6/28/which-teams-are-in-world-cup-last-32-knockouts-and-what-is-the-schedule),
+  [Olympics.com](https://www.olympics.com/en/news/fifa-world-cup-2026-bracket-round-32-full-schedule-live-updates),
+  [SI](https://www.si.com/soccer/every-confirmed-round-of-32-match-2026-world-cup),
+  [NBC Sports](https://www.nbcsports.com/soccer/news/2026-world-cup-round-of-32-confirmed-schedule-predictions-for-knockout-round)).
+  Kickoff times were published in US Eastern; `kickoff_utc = ET + 4h` (EDT) — e.g.
+  3pm ET → `19:00Z`.
+- **Round-of-32 teams** — the actual matchups, determined once the group stage finished
+  (2026-06-27). All 32 are real teams that already have a capital in `locations.json`,
+  so these cards behave exactly like the group stage (full venue-vs-home comparison).
+- **Round-of-16 teams** — these depend on Round-of-32 results, so they are encoded as
+  **bracket placeholders**: `team_a`/`team_b` are `"A/B"` slot labels (the two teams that
+  could advance, e.g. `"South Africa/Canada"`). A placeholder has no capital, so the
+  recompute job and the frontend drop the home comparison and render the match
+  **venue-only** (venue forecast + kickoff numbers + map pin). Replace a slot with the
+  single winning team's name (a `capitals` key) once a Round-of-32 result is in, and the
+  full comparison appears automatically on the next recompute.
+
+The 16 Round-of-32 winners feed the 8 Round-of-16 matches one-to-one, so each placeholder
+slot maps to exactly one earlier fixture.
+
+### Caveats on the knockout data
+
+- Matchups and times reflect the published schedule at sourcing time; spot-check against
+  FIFA official before any high-stakes use. The same Al Jazeera venue caveat applies.
+- Quarter-finals, semi-finals, third-place, and the final are **not** included yet — the
+  same placeholder mechanism would extend to them.
+
 ## Regenerating
 
 The file was produced by a one-off script (`/tmp/gen_fixtures.py`, not committed —
@@ -54,4 +85,5 @@ times and apply the offsets above.
 - Times are the published schedule, not necessarily exact broadcast kickoffs.
 - Venue assignments should be spot-checked against FIFA official before any high-stakes use;
   Al Jazeera had at least one venue error (see above).
-- Knockout stage is intentionally absent until teams are known.
+- Round-of-16 teams are bracket placeholders (see "Knockout rounds" above); quarter-finals
+  onward are not yet included.

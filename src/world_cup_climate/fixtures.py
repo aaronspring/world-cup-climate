@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass
 
 from .config import DATA_DIR
-from .locations import Place, capital, venue
+from .locations import Place, capital, has_capital, venue
 
 
 @dataclass(frozen=True)
@@ -27,16 +27,19 @@ class Match:
         return venue(self.venue_key)
 
     @property
-    def capital_a(self) -> Place:
-        return capital(self.team_a)
+    def capital_a(self) -> Place | None:
+        """Home capital of ``team_a``, or ``None`` for a bracket placeholder."""
+        return capital(self.team_a) if has_capital(self.team_a) else None
 
     @property
-    def capital_b(self) -> Place:
-        return capital(self.team_b)
+    def capital_b(self) -> Place | None:
+        """Home capital of ``team_b``, or ``None`` for a bracket placeholder."""
+        return capital(self.team_b) if has_capital(self.team_b) else None
 
     def places(self) -> list[Place]:
-        """The three locations compared for this match."""
-        return [self.venue, self.capital_a, self.capital_b]
+        """The locations compared for this match: venue plus any resolvable
+        capitals (knockout placeholders without a capital are skipped)."""
+        return [p for p in (self.venue, self.capital_a, self.capital_b) if p is not None]
 
 
 def load_matches(date: str | None = None) -> list[Match]:
