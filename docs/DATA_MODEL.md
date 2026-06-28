@@ -36,13 +36,15 @@ validation snippet at the bottom.)
 |-------|------|-------|
 | `date` | string | Calendar day at the venue. `kickoff_utc` can be the following UTC day for evening kickoffs. |
 | `kickoff_utc` | string | ISO 8601, always `Z`. See `FIXTURES.md` for how it was derived. |
-| `stage` | string | `"Group A"`..`"Group L"`, `"Round of 32"`, `"Round of 16"`. |
-| `team_a`, `team_b` | string | Group-stage and Round-of-32: exact `capitals` keys (naming follows the source: `USA`, `South Korea`, `Czechia`, `Turkiye`, `DR Congo`, `Ivory Coast`). Round-of-16: a `"A/B"` bracket placeholder (no capital). |
+| `stage` | string | `"Group A"`..`"Group L"`, `"Round of 32"`, `"Round of 16"`, `"Quarter-final"`, `"Semi-final"`, `"Third-place play-off"`, `"Final"`. |
+| `team_a`, `team_b` | string | Group-stage and Round-of-32: exact `capitals` keys (naming follows the source: `USA`, `South Korea`, `Czechia`, `Turkiye`, `DR Congo`, `Ivory Coast`). Round-of-16 onward: a bracket placeholder (no capital) — either an `"A/B"` slot (R16, the two teams that could advance) or a `"Winner R16-1"` / `"Winner QF1"` / `"Loser SF1"` slot (quarter-final onward). |
 | `venue` | string | Exact `venues` key. |
 
-Scope: 72 group-stage matches (2026-06-11 → 2026-06-27), 16 Round-of-32 matches
-(2026-06-28 → 2026-07-03, real teams) and 8 Round-of-16 matches (2026-07-04 →
-2026-07-07, placeholder teams). Quarter-finals onward are not included yet.
+Scope: all 104 matches. 72 group-stage (2026-06-11 → 2026-06-27); the 16-match
+Round of 32 (2026-06-28 → 2026-07-03, real teams); and the rest of the bracket as
+placeholder teams — Round of 16 (2026-07-04 → 2026-07-07), quarter-finals
+(2026-07-09 → 2026-07-11), semi-finals (2026-07-14 / 15), third-place play-off
+(2026-07-18) and final (2026-07-19).
 
 ## `data/locations.json`
 
@@ -96,7 +98,7 @@ import json
 loc = json.load(open("data/locations.json"))
 fx  = json.load(open("data/fixtures.json"))
 caps, ven = set(loc["capitals"]), set(loc["venues"])
-placeholder = lambda t: "/" in t  # bracket slot, winner of an earlier match
+placeholder = lambda t: "/" in t or t.split()[0] in {"Winner", "Loser"}  # bracket slot
 for m in fx["matches"]:
     for t in (m["team_a"], m["team_b"]):
         assert placeholder(t) or t in caps, m

@@ -99,6 +99,17 @@
     {"date": "2026-07-06", "kickoff_utc": "2026-07-06T19:00:00Z", "stage": "Round of 16", "team_a": "Spain/Austria", "team_b": "Portugal/Croatia", "venue": "att_stadium"},
     {"date": "2026-07-06", "kickoff_utc": "2026-07-07T00:00:00Z", "stage": "Round of 16", "team_a": "USA/Bosnia and Herzegovina", "team_b": "Belgium/Senegal", "venue": "lumen_field"},
     {"date": "2026-07-07", "kickoff_utc": "2026-07-07T16:00:00Z", "stage": "Round of 16", "team_a": "Argentina/Cape Verde", "team_b": "Australia/Egypt", "venue": "mercedes_benz"},
-    {"date": "2026-07-07", "kickoff_utc": "2026-07-07T20:00:00Z", "stage": "Round of 16", "team_a": "Switzerland/Algeria", "team_b": "Colombia/Ghana", "venue": "bc_place"}
+    {"date": "2026-07-07", "kickoff_utc": "2026-07-07T20:00:00Z", "stage": "Round of 16", "team_a": "Switzerland/Algeria", "team_b": "Colombia/Ghana", "venue": "bc_place"},
+
+    {"date": "2026-07-09", "kickoff_utc": "2026-07-09T20:00:00Z", "stage": "Quarter-final", "team_a": "Winner R16-1", "team_b": "Winner R16-2", "venue": "gillette"},
+    {"date": "2026-07-10", "kickoff_utc": "2026-07-10T19:00:00Z", "stage": "Quarter-final", "team_a": "Winner R16-5", "team_b": "Winner R16-6", "venue": "sofi"},
+    {"date": "2026-07-11", "kickoff_utc": "2026-07-11T16:00:00Z", "stage": "Quarter-final", "team_a": "Winner R16-7", "team_b": "Winner R16-8", "venue": "arrowhead"},
+    {"date": "2026-07-11", "kickoff_utc": "2026-07-11T20:00:00Z", "stage": "Quarter-final", "team_a": "Winner R16-3", "team_b": "Winner R16-4", "venue": "hard_rock"},
+
+    {"date": "2026-07-14", "kickoff_utc": "2026-07-14T19:00:00Z", "stage": "Semi-final", "team_a": "Winner QF1", "team_b": "Winner QF2", "venue": "att_stadium"},
+    {"date": "2026-07-15", "kickoff_utc": "2026-07-15T19:00:00Z", "stage": "Semi-final", "team_a": "Winner QF3", "team_b": "Winner QF4", "venue": "mercedes_benz"},
+
+    {"date": "2026-07-18", "kickoff_utc": "2026-07-18T21:00:00Z", "stage": "Third-place play-off", "team_a": "Loser SF1", "team_b": "Loser SF2", "venue": "hard_rock"},
+    {"date": "2026-07-19", "kickoff_utc": "2026-07-19T19:00:00Z", "stage": "Final", "team_a": "Winner SF1", "team_b": "Winner SF2", "venue": "metlife"}
   ]
 }

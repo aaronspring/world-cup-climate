@@ -70,6 +70,16 @@ def test_build_match_placeholder_team_is_venue_only():
         assert len(doc["series"]["venue"][k]) == n
 
 
+def test_build_match_winner_slot_is_venue_only():
+    """Quarter-final-onward slots ("Winner R16-1", "Loser SF1") have no capital
+    either, so they also render venue-only."""
+    m = Match("2026-07-19", "2026-07-19T19:00:00Z", "Final",
+              "Winner SF1", "Winner SF2", "metlife")
+    doc = build_match(m, synth_series)
+    assert set(doc["series"]) == {"time", "venue"}
+    assert doc["stats"] == {}
+
+
 def test_build_match_one_placeholder_one_real():
     """If only one side is a placeholder, keep the resolvable side's series/stats."""
     m = Match("2026-07-04", "2026-07-04T17:00:00Z", "Round of 16",

@@ -1,8 +1,10 @@
 # How `data/fixtures.json` was sourced
 
-`data/fixtures.json` holds all **72 group-stage matches** of the 2026 FIFA World Cup
-(2026-06-11 → 2026-06-27) plus the first two knockout rounds: **16 Round-of-32 matches**
-(2026-06-28 → 2026-07-03) and **8 Round-of-16 matches** (2026-07-04 → 2026-07-07).
+`data/fixtures.json` holds all **104 matches** of the 2026 FIFA World Cup: the
+**72 group-stage matches** (2026-06-11 → 2026-06-27) and the full **knockout bracket** —
+16 Round of 32 (2026-06-28 → 2026-07-03), 8 Round of 16 (2026-07-04 → 2026-07-07),
+4 quarter-finals (2026-07-09 → 2026-07-11), 2 semi-finals (2026-07-14 / 15), the
+third-place play-off (2026-07-18) and the final (2026-07-19).
 
 ## Sources
 
@@ -56,23 +58,44 @@ USA–Paraguay (01:00 UTC), and every June 14–15 match.
 - **Round-of-32 teams** — the actual matchups, determined once the group stage finished
   (2026-06-27). All 32 are real teams that already have a capital in `locations.json`,
   so these cards behave exactly like the group stage (full venue-vs-home comparison).
-- **Round-of-16 teams** — these depend on Round-of-32 results, so they are encoded as
-  **bracket placeholders**: `team_a`/`team_b` are `"A/B"` slot labels (the two teams that
-  could advance, e.g. `"South Africa/Canada"`). A placeholder has no capital, so the
-  recompute job and the frontend drop the home comparison and render the match
-  **venue-only** (venue forecast + kickoff numbers + map pin). Replace a slot with the
-  single winning team's name (a `capitals` key) once a Round-of-32 result is in, and the
-  full comparison appears automatically on the next recompute.
+- **Round-of-16 onward** — these depend on earlier knockout results, so the teams are
+  encoded as **bracket placeholders**: `team_a`/`team_b` are slot labels with no capital,
+  so the recompute job and the frontend drop the home comparison and render the match
+  **venue-only** (venue forecast + kickoff numbers + map pin). Two label styles:
+  - **Round of 16** — `"A/B"`, the two teams that could advance (e.g.
+    `"South Africa/Canada"`). The 16 Round-of-32 winners feed the 8 ties one-to-one.
+  - **Quarter-final onward** — `"Winner R16-1"`, `"Winner QF1"`, `"Loser SF1"`, since the
+    team pool is too large to enumerate.
 
-The 16 Round-of-32 winners feed the 8 Round-of-16 matches one-to-one, so each placeholder
-slot maps to exactly one earlier fixture.
+  Replace a slot with the winning (or losing) team's name (a `capitals` key) once a result
+  is in, and the full comparison appears automatically on the next recompute.
+
+### Bracket map (which slot feeds which match)
+
+`R16-n` numbers the eight Round-of-16 ties **in kickoff order** (R16-1 = first, Houston
+Jul 4 … R16-8 = last, Vancouver Jul 7). The back half then follows the FIFA bracket:
+
+| Match | Venue | Feeds from |
+| --- | --- | --- |
+| QF1 | Boston (`gillette`) | Winner R16-1 vs Winner R16-2 |
+| QF2 | Los Angeles (`sofi`) | Winner R16-5 vs Winner R16-6 |
+| QF3 | Miami (`hard_rock`) | Winner R16-3 vs Winner R16-4 |
+| QF4 | Kansas City (`arrowhead`) | Winner R16-7 vs Winner R16-8 |
+| SF1 | Dallas (`att_stadium`) | Winner QF1 vs Winner QF2 |
+| SF2 | Atlanta (`mercedes_benz`) | Winner QF3 vs Winner QF4 |
+| Third place | Miami (`hard_rock`) | Loser SF1 vs Loser SF2 |
+| Final | New York/New Jersey (`metlife`) | Winner SF1 vs Winner SF2 |
+
+QF1..QF4 and SF1/SF2 are the FIFA bracket positions (match order), not the file's display
+order — e.g. QF4 (Kansas City) kicks off before QF3 (Miami) on 2026-07-11.
 
 ### Caveats on the knockout data
 
-- Matchups and times reflect the published schedule at sourcing time; spot-check against
-  FIFA official before any high-stakes use. The same Al Jazeera venue caveat applies.
-- Quarter-finals, semi-finals, third-place, and the final are **not** included yet — the
-  same placeholder mechanism would extend to them.
+- Matchups, venues and times reflect the published schedule at sourcing time; spot-check
+  against FIFA official before any high-stakes use. The same Al Jazeera venue caveat applies.
+- Quarter-final-onward kickoff times were reported inconsistently across sources (often in
+  UK time); they were normalised to US Eastern and may be off by an hour for some matches.
+  The teams are placeholders regardless, so this only shifts which forecast hour is marked.
 
 ## Regenerating
 
