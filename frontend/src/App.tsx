@@ -32,6 +32,9 @@ export default function App() {
   // change, so we stash the next match's id here and re-apply it once that
   // day's pins arrive.
   const pendingSelId = useRef<string | null>(null);
+  // The date strip scrolls horizontally; keep the active date in view so the
+  // next match's date is visible on first load (it can sit far to the right).
+  const activeDateRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     loadCycle()
@@ -73,6 +76,10 @@ export default function App() {
     loadMatch(selId).then((m) => live && setMatch(m)).catch((e) => setError(String(e)));
     return () => { live = false; };
   }, [selId]);
+
+  useEffect(() => {
+    activeDateRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [date, cycle]);
 
   const sortedPins = useMemo(
     () => [...pins].sort((a, b) => a.kickoff_utc.localeCompare(b.kickoff_utc)),
@@ -127,6 +134,7 @@ export default function App() {
           {cycle?.dates.map((d) => (
             <button
               key={d}
+              ref={d === date ? activeDateRef : undefined}
               onClick={() => setDate(d)}
               className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 text-center transition ${
                 d === date ? "bg-white text-slate-900" : "text-slate-300 hover:bg-white/10"
