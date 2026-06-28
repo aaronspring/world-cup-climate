@@ -188,6 +188,8 @@ export default function MatchCard({
   const [lang] = useLang();
   const t: Translations = T[lang];
   const si = t.statInfoTexts;
+  // Beyond the forecast horizon (far-future knockout fixture): no IFS data yet.
+  const pending = match?.t2m_at_kickoff == null;
 
   return (
     <AnimatePresence>
@@ -235,29 +237,41 @@ export default function MatchCard({
           </div>
 
           {/* Kickoff hero tile */}
-          <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4">
-            <div
-              className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-black"
-              style={{ background: tempColor(match.heat_index_at_kickoff) }}
-            >
-              {Math.round(match.heat_index_at_kickoff)}°
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1 text-sm font-semibold">
-                {t.feelsLike}
-                <InfoTooltip text={si.feelsLike} {...NOAA_HI} />
+          {pending ? (
+            <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4">
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-slate-600/40 text-2xl font-extrabold text-slate-300">
+                —
               </div>
-              <div className="text-xs text-slate-400">
-                {t.airTemp(Math.round(match.t2m_at_kickoff))}
-                {match.wbgt_at_kickoff != null && (
-                  <span className="ml-2">
-                    · WBGT {Math.round(match.wbgt_at_kickoff)}°
-                    <InfoTooltip text={si.wbgtKickoff} {...STULL_WBGT} />
-                  </span>
-                )}
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold">{t.forecastPending}</div>
+                <div className="text-xs text-slate-400">{t.forecastPendingNote}</div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4">
+              <div
+                className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-black"
+                style={{ background: tempColor(match.heat_index_at_kickoff!) }}
+              >
+                {Math.round(match.heat_index_at_kickoff!)}°
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1 text-sm font-semibold">
+                  {t.feelsLike}
+                  <InfoTooltip text={si.feelsLike} {...NOAA_HI} />
+                </div>
+                <div className="text-xs text-slate-400">
+                  {t.airTemp(Math.round(match.t2m_at_kickoff!))}
+                  {match.wbgt_at_kickoff != null && (
+                    <span className="ml-2">
+                      · WBGT {Math.round(match.wbgt_at_kickoff)}°
+                      <InfoTooltip text={si.wbgtKickoff} {...STULL_WBGT} />
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {match.stats.team_a || match.stats.team_b ? (
             <div className="flex gap-3">
@@ -270,7 +284,12 @@ export default function MatchCard({
             </div>
           )}
 
-          {/* Chart variable selector */}
+          {/* Chart variable selector — hidden when the forecast is pending */}
+          {pending ? (
+            <div className="rounded-2xl bg-black/20 px-3.5 py-6 text-center text-sm text-slate-400">
+              {t.forecastPendingNote}
+            </div>
+          ) : (
           <div>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {Object.entries(variables).map(([k, m]) => (
@@ -300,6 +319,7 @@ export default function MatchCard({
               <Chart match={match} varKey={varKey} meta={variables[varKey]} forecastStart={forecastStart} />
             </div>
           </div>
+          )}
         </motion.aside>
       )}
     </AnimatePresence>

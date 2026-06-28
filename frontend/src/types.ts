@@ -34,8 +34,10 @@ export interface Pin {
   team_a: string;
   team_b: string;
   venue: Venue;
-  t2m_at_kickoff: number;
-  heat_index_at_kickoff: number;
+  // null when the match is beyond the forecast horizon (no IFS data yet) — a
+  // far-future knockout fixture. The UI renders those as "forecast pending".
+  t2m_at_kickoff: number | null;
+  heat_index_at_kickoff: number | null;
   wbgt_at_kickoff?: number | null;
   t2m_map?: string;
 }

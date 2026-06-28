@@ -136,9 +136,9 @@ export default function App() {
           >
             <span
               className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-xs font-bold text-black"
-              style={{ background: tempColor(p.t2m_at_kickoff) }}
+              style={{ background: p.t2m_at_kickoff == null ? "#64748b" : tempColor(p.t2m_at_kickoff) }}
             >
-              {Math.round(p.t2m_at_kickoff)}°
+              {p.t2m_at_kickoff == null ? "—" : `${Math.round(p.t2m_at_kickoff)}°`}
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">
