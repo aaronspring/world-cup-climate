@@ -267,8 +267,11 @@ def build_match(m: Match, series_fn) -> dict:
             "roof": v.roof,
             "air_conditioned": v.air_conditioned,
         },
-        "t2m_at_kickoff":        round(window_mean(times, sv["t2m"],        ko), 1),
-        "heat_index_at_kickoff": round(window_mean(times, sv["heat_index"], ko), 1),
+        # None (JSON null) when the match falls beyond the forecast horizon — a
+        # far-future knockout fixture has no IFS data yet. Must not emit a bare
+        # NaN: that is invalid JSON and breaks the browser's JSON.parse.
+        "t2m_at_kickoff":        _safe_round(window_mean(times, sv["t2m"],        ko)),
+        "heat_index_at_kickoff": _safe_round(window_mean(times, sv["heat_index"], ko)),
         "wbgt_at_kickoff":       _safe_round(window_mean(times, sv["wbgt"], ko)),
         "window": {"start": times[0].isoformat() + "Z", "end": times[-1].isoformat() + "Z"},
         "series": series,

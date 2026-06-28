@@ -107,6 +107,13 @@ for m in fx["matches"]:
 
 In the precomputed per-match doc (`matches/{id}.json`, see `ARCHITECTURE.md` §4), a
 placeholder team has **no** entry under `series.team_a`/`series.team_b` or
-`stats.team_a`/`stats.team_b` — the venue series, kickoff numbers, and the map pin are
-always present. The frontend keys off the absence of those entries to drop the home
-comparison and label the chart "venue forecast".
+`stats.team_a`/`stats.team_b` — the venue series and the map pin are always present. The
+frontend keys off the absence of those entries to drop the home comparison and label the
+chart "venue forecast".
+
+The kickoff scalars (`t2m_at_kickoff`, `heat_index_at_kickoff`, `wbgt_at_kickoff`) are
+`null` when the match falls **beyond the IFS forecast horizon** (~15 days), as the latest
+knockout fixtures do early in the tournament — there is no forecast for them yet. Emitting
+`null` (never a bare `NaN`, which is invalid JSON) lets the frontend render those as a
+neutral "forecast pending" pin and card; they fill in automatically as each recompute
+brings the date into range.

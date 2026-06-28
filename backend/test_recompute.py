@@ -70,6 +70,27 @@ def test_build_match_placeholder_team_is_venue_only():
         assert len(doc["series"]["venue"][k]) == n
 
 
+def test_build_match_beyond_horizon_emits_null_not_nan():
+    """A match past the forecast horizon (all-NaN series) must serialise the
+    kickoff numbers as JSON null, never a bare NaN token (which breaks the
+    browser's JSON.parse)."""
+    import json
+
+    def nan_series(place, times):
+        return {k: np.full(len(times), np.nan) for k in VARIABLES}
+
+    m = Match("2026-07-19", "2026-07-19T19:00:00Z", "Final",
+              "Winner SF1", "Winner SF2", "metlife")
+    doc = build_match(m, nan_series)
+    assert doc["t2m_at_kickoff"] is None
+    assert doc["heat_index_at_kickoff"] is None
+    # strict parse (no NaN/Infinity) must succeed, like JSON.parse in the browser
+    json.loads(
+        json.dumps(doc),
+        parse_constant=lambda _: (_ for _ in ()).throw(ValueError("NaN not allowed")),
+    )
+
+
 def test_build_match_winner_slot_is_venue_only():
     """Quarter-final-onward slots ("Winner R16-1", "Loser SF1") have no capital
     either, so they also render venue-only."""

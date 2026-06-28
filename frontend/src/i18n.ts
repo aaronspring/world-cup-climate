@@ -24,6 +24,8 @@ export interface Translations {
   venueSeries: (label: string, unit: string) => string;
   venueOnlySeries: (label: string, unit: string) => string;
   knockoutTbd: string;
+  forecastPending: string;
+  forecastPendingNote: string;
   forecast: string;
   kickoff: string;
   localTime: string;
@@ -69,6 +71,8 @@ export const T: Record<Lang, Translations> = {
     venueSeries: (label, unit) => `${label} (${unit}) · venue (solid) vs home cities (dashed)`,
     venueOnlySeries: (label, unit) => `${label} (${unit}) · venue forecast`,
     knockoutTbd: "Teams decided after the previous round — showing the venue forecast.",
+    forecastPending: "Forecast pending",
+    forecastPendingNote: "Beyond the 15-day forecast horizon — check back closer to kickoff.",
     forecast: "forecast",
     kickoff: "kickoff",
     localTime: "local",
@@ -129,6 +133,8 @@ export const T: Record<Lang, Translations> = {
     venueSeries: (label, unit) => `${label} (${unit}) · Spielort (durchgehend) vs. Heimstädte (gestrichelt)`,
     venueOnlySeries: (label, unit) => `${label} (${unit}) · Vorhersage für den Spielort`,
     knockoutTbd: "Teams stehen nach der vorherigen Runde fest — gezeigt wird die Vorhersage für den Spielort.",
+    forecastPending: "Vorhersage ausstehend",
+    forecastPendingNote: "Außerhalb des 15-Tage-Vorhersagehorizonts — schau näher am Anstoß noch einmal vorbei.",
     forecast: "Vorhersage",
     kickoff: "Anstoß",
     localTime: "lokal",
