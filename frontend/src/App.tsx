@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MapView from "./MapView";
 import MatchCard from "./MatchCard";
 import { loadCycle, loadDay, loadMatch } from "./data";
+import { candidateDates, pickNextMatch } from "./nextMatch";
 import type { Cycle, Match, Pin } from "./types";
 import { flag } from "./flags";
 import { tempColor, TEMP_LEGEND } from "./colors";
@@ -27,13 +28,26 @@ export default function App() {
   const [match, setMatch] = useState<Match | null>(null);
   const [varKey, setVarKey] = useState("t2m");
   const [error, setError] = useState<string | null>(null);
+  // First-load selection: the date effect clears the selection on every date
+  // change, so we stash the next match's id here and re-apply it once that
+  // day's pins arrive.
+  const pendingSelId = useRef<string | null>(null);
 
   useEffect(() => {
     loadCycle()
-      .then((c) => {
+      .then(async (c) => {
         setCycle(c);
-        const today = new Date().toISOString().slice(0, 10);
-        setDate(c.dates.includes(today) ? today : c.dates[0]);
+        const nowIso = new Date().toISOString();
+        // On first visit, jump to the next match based on the current time.
+        const days = await Promise.all(candidateDates(c.dates, nowIso).map(loadDay));
+        const next = pickNextMatch(days, nowIso);
+        if (next) {
+          pendingSelId.current = next.id;
+          setDate(next.date);
+        } else {
+          const today = nowIso.slice(0, 10);
+          setDate(c.dates.includes(today) ? today : c.dates[0]);
+        }
       })
       .catch((e) => setError(String(e)));
   }, []);
@@ -42,7 +56,15 @@ export default function App() {
     if (!date) return;
     setSelId(null);
     setMatch(null);
-    loadDay(date).then((d) => setPins(d.matches)).catch((e) => setError(String(e)));
+    loadDay(date)
+      .then((d) => {
+        setPins(d.matches);
+        if (pendingSelId.current) {
+          setSelId(pendingSelId.current);
+          pendingSelId.current = null;
+        }
+      })
+      .catch((e) => setError(String(e)));
   }, [date]);
 
   useEffect(() => {
