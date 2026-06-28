@@ -1,8 +1,10 @@
 # How `data/fixtures.json` was sourced
 
-`data/fixtures.json` holds all **72 group-stage matches** of the 2026 FIFA World Cup
-(2026-06-11 → 2026-06-27). Knockout matches are excluded: their teams are TBD, so they
-can't be keyed to a national capital, which the app requires.
+`data/fixtures.json` holds all **104 matches** of the 2026 FIFA World Cup: the
+**72 group-stage matches** (2026-06-11 → 2026-06-27) and the full **knockout bracket** —
+16 Round of 32 (2026-06-28 → 2026-07-03), 8 Round of 16 (2026-07-04 → 2026-07-07),
+4 quarter-finals (2026-07-09 → 2026-07-11), 2 semi-finals (2026-07-14 / 15), the
+third-place play-off (2026-07-18) and the final (2026-07-19).
 
 ## Sources
 
@@ -43,6 +45,58 @@ USA–Paraguay (01:00 UTC), and every June 14–15 match.
 - **South Korea vs Czechia (Jun 11, Guadalajara)** — missing from Al Jazeera's list;
   added from the KickoffAdventures slot (19:00 local → 01:00 UTC Jun 12).
 
+## Knockout rounds (Round of 32 + Round of 16)
+
+- **Schedule (dates, venues, kickoff times)** — the predetermined FIFA knockout bracket
+  is fixed before the group stage ends, sourced from the public schedules
+  ([Al Jazeera](https://www.aljazeera.com/sports/2026/6/28/which-teams-are-in-world-cup-last-32-knockouts-and-what-is-the-schedule),
+  [Olympics.com](https://www.olympics.com/en/news/fifa-world-cup-2026-bracket-round-32-full-schedule-live-updates),
+  [SI](https://www.si.com/soccer/every-confirmed-round-of-32-match-2026-world-cup),
+  [NBC Sports](https://www.nbcsports.com/soccer/news/2026-world-cup-round-of-32-confirmed-schedule-predictions-for-knockout-round)).
+  Kickoff times were published in US Eastern; `kickoff_utc = ET + 4h` (EDT) — e.g.
+  3pm ET → `19:00Z`.
+- **Round-of-32 teams** — the actual matchups, determined once the group stage finished
+  (2026-06-27). All 32 are real teams that already have a capital in `locations.json`,
+  so these cards behave exactly like the group stage (full venue-vs-home comparison).
+- **Round-of-16 onward** — these depend on earlier knockout results, so the teams are
+  encoded as **bracket placeholders**: `team_a`/`team_b` are slot labels with no capital,
+  so the recompute job and the frontend drop the home comparison and render the match
+  **venue-only** (venue forecast + kickoff numbers + map pin). Two label styles:
+  - **Round of 16** — `"A/B"`, the two teams that could advance (e.g.
+    `"South Africa/Canada"`). The 16 Round-of-32 winners feed the 8 ties one-to-one.
+  - **Quarter-final onward** — `"Winner R16-1"`, `"Winner QF1"`, `"Loser SF1"`, since the
+    team pool is too large to enumerate.
+
+  Replace a slot with the winning (or losing) team's name (a `capitals` key) once a result
+  is in, and the full comparison appears automatically on the next recompute.
+
+### Bracket map (which slot feeds which match)
+
+`R16-n` numbers the eight Round-of-16 ties **in kickoff order** (R16-1 = first, Houston
+Jul 4 … R16-8 = last, Vancouver Jul 7). The back half then follows the FIFA bracket:
+
+| Match | Venue | Feeds from |
+| --- | --- | --- |
+| QF1 | Boston (`gillette`) | Winner R16-1 vs Winner R16-2 |
+| QF2 | Los Angeles (`sofi`) | Winner R16-5 vs Winner R16-6 |
+| QF3 | Miami (`hard_rock`) | Winner R16-3 vs Winner R16-4 |
+| QF4 | Kansas City (`arrowhead`) | Winner R16-7 vs Winner R16-8 |
+| SF1 | Dallas (`att_stadium`) | Winner QF1 vs Winner QF2 |
+| SF2 | Atlanta (`mercedes_benz`) | Winner QF3 vs Winner QF4 |
+| Third place | Miami (`hard_rock`) | Loser SF1 vs Loser SF2 |
+| Final | New York/New Jersey (`metlife`) | Winner SF1 vs Winner SF2 |
+
+QF1..QF4 and SF1/SF2 are the FIFA bracket positions (match order), not the file's display
+order — e.g. QF4 (Kansas City) kicks off before QF3 (Miami) on 2026-07-11.
+
+### Caveats on the knockout data
+
+- Matchups, venues and times reflect the published schedule at sourcing time; spot-check
+  against FIFA official before any high-stakes use. The same Al Jazeera venue caveat applies.
+- Quarter-final-onward kickoff times were reported inconsistently across sources (often in
+  UK time); they were normalised to US Eastern and may be off by an hour for some matches.
+  The teams are placeholders regardless, so this only shifts which forecast hour is marked.
+
 ## Regenerating
 
 The file was produced by a one-off script (`/tmp/gen_fixtures.py`, not committed —
@@ -54,4 +108,5 @@ times and apply the offsets above.
 - Times are the published schedule, not necessarily exact broadcast kickoffs.
 - Venue assignments should be spot-checked against FIFA official before any high-stakes use;
   Al Jazeera had at least one venue error (see above).
-- Knockout stage is intentionally absent until teams are known.
+- Round-of-16 teams are bracket placeholders (see "Knockout rounds" above); quarter-finals
+  onward are not yet included.

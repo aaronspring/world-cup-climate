@@ -11,6 +11,9 @@ import { T, LOCALE } from "./i18n";
 const wd = (d: string, locale: string) =>
   new Date(d + "T00:00:00Z").toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" });
 const dayNum = (d: string) => new Date(d + "T00:00:00Z").getUTCDate();
+// "Jun 28" / "Jul 4" — month-aware so the knockout dates in July read correctly.
+const monthDay = (d: string, locale: string) =>
+  new Date(d + "T00:00:00Z").toLocaleDateString(locale, { month: "short", day: "numeric", timeZone: "UTC" });
 
 export default function App() {
   const [lang, setLang] = useLang();
@@ -121,7 +124,7 @@ export default function App() {
         }`}
       >
         <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          {t.matchCount(sortedPins.length, dayNum(date))}
+          {t.matchCount(sortedPins.length, monthDay(date, locale))}
         </div>
         {sortedPins.map((p) => (
           <button

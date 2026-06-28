@@ -141,8 +141,10 @@ def make_ifs_series_fn(matches: list[Match]):
 
     uniq: dict[tuple[float, float], tuple[float, float]] = {}
     for m in matches:
+        # capital_a/capital_b are None for knockout bracket placeholders.
         for p in (m.venue, m.capital_a, m.capital_b):
-            uniq[_pkey(p)] = (p.lat, p.lon)
+            if p is not None:
+                uniq[_pkey(p)] = (p.lat, p.lon)
 
     log.info("extracting %d unique points in one bulk read...", len(uniq))
     t0 = time.perf_counter()
@@ -208,10 +210,12 @@ def build_match(m: Match, series_fn) -> dict:
     times = pd.date_range(md - WINDOW_BEFORE, md + WINDOW_AFTER, freq="1h")
     ko = pd.Timestamp(m.kickoff_utc).tz_convert(None)
 
+    # ca/cb are None for knockout bracket placeholders ("A/B") — those have no
+    # home capital, so the match renders venue-only (no per-team series or stats).
     v, ca, cb = m.venue, m.capital_a, m.capital_b
     sv = series_fn(v, times)
-    sa = series_fn(ca, times)
-    sb = series_fn(cb, times)
+    sa = series_fn(ca, times) if ca is not None else None
+    sb = series_fn(cb, times) if cb is not None else None
 
     v_off = utc_offset_hours(v.lon)
     kickoff_local = (ko + pd.Timedelta(hours=v_off)).strftime("%Y-%m-%d %H:%M")
@@ -232,6 +236,18 @@ def build_match(m: Match, series_fn) -> dict:
             if not math.isnan(v_val) and not math.isnan(h_val):
                 base[f"d_{key}"] = _safe_round(v_val - h_val)
         return base
+
+    series: dict = {
+        "time": [t.isoformat() + "Z" for t in times],
+        "venue": {k: round_series(sv[k]) for k in VARIABLES},
+    }
+    stats_doc: dict = {}
+    if sa is not None:
+        series["team_a"] = {k: round_series(sa[k]) for k in VARIABLES}
+        stats_doc["team_a"] = stats(ca, sa)
+    if sb is not None:
+        series["team_b"] = {k: round_series(sb[k]) for k in VARIABLES}
+        stats_doc["team_b"] = stats(cb, sb)
 
     return {
         "id": match_id(m),
@@ -255,13 +271,8 @@ def build_match(m: Match, series_fn) -> dict:
         "heat_index_at_kickoff": round(window_mean(times, sv["heat_index"], ko), 1),
         "wbgt_at_kickoff":       _safe_round(window_mean(times, sv["wbgt"], ko)),
         "window": {"start": times[0].isoformat() + "Z", "end": times[-1].isoformat() + "Z"},
-        "series": {
-            "time": [t.isoformat() + "Z" for t in times],
-            "venue":  {k: round_series(sv[k]) for k in VARIABLES},
-            "team_a": {k: round_series(sa[k]) for k in VARIABLES},
-            "team_b": {k: round_series(sb[k]) for k in VARIABLES},
-        },
-        "stats": {"team_a": stats(ca, sa), "team_b": stats(cb, sb)},
+        "series": series,
+        "stats": stats_doc,
     }
 
 

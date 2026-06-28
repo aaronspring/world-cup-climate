@@ -55,6 +55,40 @@ def test_build_match_shape():
     assert doc["window"]["start"] <= doc["kickoff_utc"].replace("Z", "") <= doc["window"]["end"]
 
 
+def test_build_match_placeholder_team_is_venue_only():
+    """A knockout placeholder team (no capital) yields a venue-only doc:
+    the venue series + kickoff stats stay, but that team's series and stats
+    are omitted rather than faked."""
+    m = Match("2026-07-04", "2026-07-04T17:00:00Z", "Round of 16",
+              "South Africa/Canada", "Netherlands/Morocco", "nrg_stadium")
+    doc = build_match(m, synth_series)
+    assert set(doc["series"]) == {"time", "venue"}      # no team_a/team_b series
+    assert doc["stats"] == {}                            # no home comparison
+    assert isinstance(doc["t2m_at_kickoff"], float)      # venue numbers still there
+    n = len(doc["series"]["time"])
+    for k in VARIABLES:
+        assert len(doc["series"]["venue"][k]) == n
+
+
+def test_build_match_winner_slot_is_venue_only():
+    """Quarter-final-onward slots ("Winner R16-1", "Loser SF1") have no capital
+    either, so they also render venue-only."""
+    m = Match("2026-07-19", "2026-07-19T19:00:00Z", "Final",
+              "Winner SF1", "Winner SF2", "metlife")
+    doc = build_match(m, synth_series)
+    assert set(doc["series"]) == {"time", "venue"}
+    assert doc["stats"] == {}
+
+
+def test_build_match_one_placeholder_one_real():
+    """If only one side is a placeholder, keep the resolvable side's series/stats."""
+    m = Match("2026-07-04", "2026-07-04T17:00:00Z", "Round of 16",
+              "Mexico", "England/DR Congo", "estadio_azteca")
+    doc = build_match(m, synth_series)
+    assert "team_a" in doc["series"] and "team_b" not in doc["series"]
+    assert set(doc["stats"]) == {"team_a"}
+
+
 def test_latest_init_idx_takes_newest_written_any_cycle():
     """Pick the newest init that's written, regardless of cycle hour.
 

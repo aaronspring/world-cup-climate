@@ -42,6 +42,15 @@ def venue(key: str) -> Place:
     )
 
 
+def has_capital(country: str) -> bool:
+    """Whether ``country`` resolves to a capital.
+
+    Knockout bracket placeholders (e.g. ``"South Africa/Canada"``) intentionally
+    have no capital, so callers can branch to a venue-only render.
+    """
+    return country in _raw()["capitals"]
+
+
 def capital(country: str) -> Place:
     caps = _raw()["capitals"]
     if country not in caps:

@@ -61,11 +61,13 @@ export type SeriesVars = Record<string, number[]>;
 
 export interface Match extends Pin {
   window: { start: string; end: string };
+  // Knockout bracket placeholders ("A/B") have no home capital, so their
+  // per-team series and stats are absent — those matches render venue-only.
   series: {
     time: string[];
     venue: SeriesVars;
-    team_a: SeriesVars;
-    team_b: SeriesVars;
+    team_a?: SeriesVars;
+    team_b?: SeriesVars;
   };
-  stats: { team_a: TeamStat; team_b: TeamStat };
+  stats: { team_a?: TeamStat; team_b?: TeamStat };
 }
