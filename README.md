@@ -51,7 +51,7 @@ from world_cup_climate.fixtures import load_matches
 from world_cup_climate import viz_ifs
 
 match = load_matches("2026-06-15")[0]
-viz_ifs.plot_match(match.places(), col="heat_index_c", matchday=match.date)
+viz_ifs.plot_match(match.places(), col="heat_index_c", kickoff=match.kickoff_utc)
 ```
 
 - `ifs.location_series(lat, lon)` → DataFrame (`t2m_c, d2m_c, rh, heat_index_c, is_forecast`), indexed by `valid_time`.

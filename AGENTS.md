@@ -47,7 +47,7 @@ meaningful exactly at `step=0`.
 - The **low-latency subscription** repo
   (`spring-data/ecmwf-ifs-15-day-forecast-low-latency-subscription`) ships *bare
   integer* dimensions (longitude offset by 180 degrees, `step` as an index over ECMWF's
-  non uniform schedule). Decoding lives in `client.py`; the app does not need it.
+  non uniform schedule). The app does not use it.
 
 ## Git Workflow
 - use `gh` cli tool and dont use github MCP server (not installed)
@@ -56,24 +56,20 @@ meaningful exactly at `step=0`.
 ## Repo Structure
 - `src/world_cup_climate/`: core library
   - `ifs.py`: IFS point reads, `location_series`, `matchday_value` (the app's data layer)
-  - `viz_ifs.py`: Plotly match plots (`plot_match`)
-  - `sports.py`: relative humidity and heat index (NOAA Rothfusz; xclim is the planned replacement)
+  - `viz_ifs.py`: matplotlib match plots (`plot_match`, notebook helper)
+  - `sports.py`: relative humidity, heat index (NOAA Rothfusz), humidex and UTCI
+    (via xclim), WBGT (manual, not yet in xclim)
   - `fixtures.py` / `locations.py`: load curated `data/fixtures.json` and `data/locations.json`
     (schema and key contract in `docs/DATA_MODEL.md`; fixture sourcing in `docs/FIXTURES.md`)
-  - `client.py`: low-latency subscription repo decoding (bare integer dims)
   - `config.py`: repo names, defaults
-  - `era5.py` / `forecast.py` / `climate.py` / `viz.py`: earlier richer ERA5 + stitching
-    prototype, kept for the planned historical normal overlay
 - `frontend/`: React + MapLibre + Tailwind SPA (Vite). Reads static JSON from
   `frontend/public/data/`. `npm install && npm run dev`.
 - `backend/recompute.py`: builds the per-match JSON contract the frontend reads
   (`cycles/`, `days/`, `matches/`). `--source demo` (synthetic, default) or `--source
   ifs` (real point extraction). `backend/test_recompute.py` has runnable self-checks.
-- `app/`: earlier Streamlit target (unused; superseded by `frontend/`)
 - `data/`: curated fixtures/locations JSON and local working data
 - `notebooks/`: exploratory analysis and experiments
 - `scripts/`: operational and one off helper scripts
-- `tasks/`: `todo.md` plans and `lessons.md`
 
 ## Coding style
 - use type hints
