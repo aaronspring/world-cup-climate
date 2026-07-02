@@ -19,8 +19,6 @@ export interface Translations {
   deltaTemp: string;
   deltaFeels: string;
   bodyClock: string;
-  sameTime: string;
-  vsVenue: string;
   venueSeries: (label: string, unit: string) => string;
   venueOnlySeries: (label: string, unit: string) => string;
   knockoutTbd: string;
@@ -29,9 +27,6 @@ export interface Translations {
   forecast: string;
   kickoff: string;
   localTime: string;
-  deltaTemp_tip: string;
-  deltaFeels_tip: string;
-  feelsLikeTip: string;
   deltaWbgt: string;
   airConLabel: string;
   airConTip: string;
@@ -66,8 +61,6 @@ export const T: Record<Lang, Translations> = {
     deltaTemp: "Δ temp",
     deltaFeels: "Δ feels",
     bodyClock: "body clock",
-    sameTime: "same time",
-    vsVenue: "vs venue",
     venueSeries: (label, unit) => `${label} (${unit}) · venue (solid) vs home cities (dashed)`,
     venueOnlySeries: (label, unit) => `${label} (${unit}) · venue forecast`,
     knockoutTbd: "Teams decided after the previous round — showing the venue forecast.",
@@ -76,9 +69,6 @@ export const T: Record<Lang, Translations> = {
     forecast: "forecast",
     kickoff: "kickoff",
     localTime: "local",
-    deltaTemp_tip: "Air temperature difference: home city vs. venue around kickoff. Orange = hotter at home, blue = cooler.",
-    deltaFeels_tip: "Heat-index difference: accounts for humidity — how much hotter or cooler it feels at home vs. the venue.",
-    feelsLikeTip: "Heat index at kickoff — combines air temperature and humidity to show how hot it actually feels to players on the pitch. Above 32°C is considered stressful for athletes.",
     deltaWbgt: "Δ WBGT",
     airConLabel: "Air-conditioned stadium",
     airConTip: "This venue has a retractable roof and a climate-controlled bowl. Operators can close the roof and run air conditioning to shield players and fans from heat — expected for hot daytime kickoffs. FIFA also mandates a 3-minute hydration break in each half of every match, regardless of roof or temperature.",
@@ -128,8 +118,6 @@ export const T: Record<Lang, Translations> = {
     deltaTemp: "Δ Temp",
     deltaFeels: "Δ Gefühlt",
     bodyClock: "Jetlag",
-    sameTime: "gleiche Zeit",
-    vsVenue: "vs. Spielort",
     venueSeries: (label, unit) => `${label} (${unit}) · Spielort (durchgehend) vs. Heimstädte (gestrichelt)`,
     venueOnlySeries: (label, unit) => `${label} (${unit}) · Vorhersage für den Spielort`,
     knockoutTbd: "Teams stehen nach der vorherigen Runde fest — gezeigt wird die Vorhersage für den Spielort.",
@@ -138,9 +126,6 @@ export const T: Record<Lang, Translations> = {
     forecast: "Vorhersage",
     kickoff: "Anstoß",
     localTime: "lokal",
-    deltaTemp_tip: "Temperaturdifferenz: Heimatstadt vs. Spielort beim Anstoß. Orange = zu Hause wärmer, blau = kühler.",
-    deltaFeels_tip: "Hitzeindex-Differenz: berücksichtigt Luftfeuchtigkeit – wie viel wärmer oder kühler es sich zu Hause im Vergleich zum Spielort anfühlt.",
-    feelsLikeTip: "Hitzeindex beim Anstoß – kombiniert Lufttemperatur und Luftfeuchtigkeit. Über 32 °C gilt als belastend für Sportler.",
     deltaWbgt: "Δ WBGT",
     airConLabel: "Klimatisiertes Stadion",
     airConTip: "Dieser Spielort hat ein schließbares Dach und einen klimatisierten Innenraum. Das Dach kann geschlossen und die Klimaanlage betrieben werden, um Spieler und Fans vor Hitze zu schützen — bei heißen Anstößen am Tag zu erwarten. Die FIFA schreibt zudem in jeder Halbzeit jedes Spiels eine 3-minütige Trinkpause vor, unabhängig von Dach oder Temperatur.",

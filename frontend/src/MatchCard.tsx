@@ -115,7 +115,6 @@ function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
   const [lang] = useLang();
   const t = T[lang];
   const si = t.statInfoTexts;
-  const tz = stat.tz_diff_h === 0 ? t.sameTime : `${sign(stat.tz_diff_h)}h ${t.vsVenue}`;
   const hasWbgt = stat.d_wbgt != null;
 
   return (
@@ -140,29 +139,20 @@ function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
           cls={deltaColor(stat.d_heat_index)}
           info={{ text: si.deltaFeels, ...NOAA_HI }}
         />
-        {hasWbgt ? (
+        {hasWbgt && (
           <Stat
             label={t.deltaWbgt}
             value={`${sign(stat.d_wbgt!)}°`}
             cls={deltaColor(stat.d_wbgt!)}
             info={{ text: si.deltaWbgt, ...STULL_WBGT }}
           />
-        ) : (
-          <Stat
-            label={t.bodyClock}
-            value={tz === t.sameTime ? "0h" : `${sign(stat.tz_diff_h)}h`}
-            cls="text-violet-300"
-            info={{ text: si.bodyClock }}
-          />
         )}
-        {hasWbgt && (
-          <Stat
-            label={t.bodyClock}
-            value={tz === t.sameTime ? "0h" : `${sign(stat.tz_diff_h)}h`}
-            cls="text-violet-300"
-            info={{ text: si.bodyClock }}
-          />
-        )}
+        <Stat
+          label={t.bodyClock}
+          value={`${sign(stat.tz_diff_h)}h`}
+          cls="text-violet-300"
+          info={{ text: si.bodyClock }}
+        />
       </div>
     </div>
   );

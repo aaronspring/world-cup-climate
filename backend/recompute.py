@@ -54,7 +54,7 @@ VARIABLES = {
     "d2m":          {"label": "Dewpoint",       "unit": "°C",  "color": "#22d3ee"},
     "heat_index":   {"label": "Feels like",     "unit": "°C",  "color": "#ef4444"},
     "humidex":      {"label": "Humidex",        "unit": "°C",  "color": "#fb923c"},
-    "utci":          {"label": "UTCI",           "unit": "°C",  "color": "#a78bfa"},
+    "utci":         {"label": "UTCI",           "unit": "°C",  "color": "#a78bfa"},
     "wbgt":         {"label": "WBGT",           "unit": "°C",  "color": "#f43f5e"},
     "wind_speed":   {"label": "Wind speed",     "unit": "m/s", "color": "#94a3b8"},
 }
@@ -226,15 +226,13 @@ def build_match(m: Match, series_fn) -> dict:
             "home": home.name,
             "country": home.country,
             "tz_diff_h": h_off - v_off,
-            "d_t2m":       _safe_round(window_mean(times, sv["t2m"],        ko) - window_mean(times, sh["t2m"],        ko)),
-            "d_d2m":       _safe_round(window_mean(times, sv["d2m"],        ko) - window_mean(times, sh["d2m"],        ko)),
-            "d_heat_index":_safe_round(window_mean(times, sv["heat_index"], ko) - window_mean(times, sh["heat_index"], ko)),
         }
-        for key in ("humidex", "wbgt", "utci"):
-            v_val = window_mean(times, sv[key], ko)
-            h_val = window_mean(times, sh[key], ko)
-            if not math.isnan(v_val) and not math.isnan(h_val):
-                base[f"d_{key}"] = _safe_round(v_val - h_val)
+        # t2m/d2m/heat_index deltas are always emitted (null when unavailable);
+        # the wind/solar-dependent indices are omitted entirely when NaN.
+        for key in ("t2m", "d2m", "heat_index", "humidex", "wbgt", "utci"):
+            delta = window_mean(times, sv[key], ko) - window_mean(times, sh[key], ko)
+            if key in ("t2m", "d2m", "heat_index") or not math.isnan(delta):
+                base[f"d_{key}"] = _safe_round(delta)
         return base
 
     series: dict = {
@@ -285,11 +283,10 @@ def pin(match: dict) -> dict:
         k: match[k]
         for k in (
             "id", "date", "stage", "kickoff_utc", "kickoff_local",
-            "team_a", "team_b", "venue", "t2m_at_kickoff", "heat_index_at_kickoff",
+            "team_a", "team_b", "venue",
+            "t2m_at_kickoff", "heat_index_at_kickoff", "wbgt_at_kickoff",
         )
     }
-    if "wbgt_at_kickoff" in match:
-        d["wbgt_at_kickoff"] = match["wbgt_at_kickoff"]
     if "t2m_map" in match:
         d["t2m_map"] = match["t2m_map"]
     return d
