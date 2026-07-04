@@ -1,6 +1,6 @@
 {
   "tournament": "FIFA World Cup 2026",
-  "note": "72 group-stage matches (2026-06-11 to 2026-06-27) plus the knockout rounds: 16 Round of 32 matches (2026-06-28 to 2026-07-03, real teams) and 8 Round of 16 matches (2026-07-04 to 2026-07-07). Round-of-16 teams are bracket placeholders ('Winner A/Winner B' written as 'A/B') with no capital, so the app renders those venue-only. kickoff_utc derived from venue-local kickoff times. See docs/FIXTURES.md for sourcing. The app needs date, two teams (group-stage and Round-of-32 teams match capitals in locations.json), venue key, and kickoff_utc.",
+  "note": "72 group-stage matches (2026-06-11 to 2026-06-27) plus the knockout rounds: 16 Round of 32 matches (2026-06-28 to 2026-07-03, real teams) and 8 Round of 16 matches (2026-07-04 to 2026-07-07, real teams once the Round of 32 finished). The quarter-finals onward remain bracket placeholders ('Winner R16-1', 'Winner QF1', ...) with no capital, so the app renders those venue-only. kickoff_utc derived from venue-local kickoff times. See docs/FIXTURES.md for sourcing. The app needs date, two teams (group-stage, Round-of-32 and Round-of-16 teams match capitals in locations.json), venue key, and kickoff_utc.",
   "matches": [
     {"date": "2026-06-11", "kickoff_utc": "2026-06-11T19:00:00Z", "stage": "Group A", "team_a": "Mexico", "team_b": "South Africa", "venue": "estadio_azteca"},
     {"date": "2026-06-11", "kickoff_utc": "2026-06-12T01:00:00Z", "stage": "Group A", "team_a": "South Korea", "team_b": "Czechia", "venue": "estadio_akron"},
@@ -92,14 +92,14 @@
     {"date": "2026-07-03", "kickoff_utc": "2026-07-03T22:00:00Z", "stage": "Round of 32", "team_a": "Argentina", "team_b": "Cape Verde", "venue": "hard_rock"},
     {"date": "2026-07-03", "kickoff_utc": "2026-07-04T00:30:00Z", "stage": "Round of 32", "team_a": "Colombia", "team_b": "Ghana", "venue": "arrowhead"},
 
-    {"date": "2026-07-04", "kickoff_utc": "2026-07-04T17:00:00Z", "stage": "Round of 16", "team_a": "South Africa/Canada", "team_b": "Netherlands/Morocco", "venue": "nrg_stadium"},
-    {"date": "2026-07-04", "kickoff_utc": "2026-07-04T21:00:00Z", "stage": "Round of 16", "team_a": "Germany/Paraguay", "team_b": "France/Sweden", "venue": "lincoln_financial"},
-    {"date": "2026-07-05", "kickoff_utc": "2026-07-05T20:00:00Z", "stage": "Round of 16", "team_a": "Brazil/Japan", "team_b": "Ivory Coast/Norway", "venue": "metlife"},
-    {"date": "2026-07-05", "kickoff_utc": "2026-07-06T00:00:00Z", "stage": "Round of 16", "team_a": "Mexico/Ecuador", "team_b": "England/DR Congo", "venue": "estadio_azteca"},
-    {"date": "2026-07-06", "kickoff_utc": "2026-07-06T19:00:00Z", "stage": "Round of 16", "team_a": "Spain/Austria", "team_b": "Portugal/Croatia", "venue": "att_stadium"},
-    {"date": "2026-07-06", "kickoff_utc": "2026-07-07T00:00:00Z", "stage": "Round of 16", "team_a": "USA/Bosnia and Herzegovina", "team_b": "Belgium/Senegal", "venue": "lumen_field"},
-    {"date": "2026-07-07", "kickoff_utc": "2026-07-07T16:00:00Z", "stage": "Round of 16", "team_a": "Argentina/Cape Verde", "team_b": "Australia/Egypt", "venue": "mercedes_benz"},
-    {"date": "2026-07-07", "kickoff_utc": "2026-07-07T20:00:00Z", "stage": "Round of 16", "team_a": "Switzerland/Algeria", "team_b": "Colombia/Ghana", "venue": "bc_place"},
+    {"date": "2026-07-04", "kickoff_utc": "2026-07-04T17:00:00Z", "stage": "Round of 16", "team_a": "Canada", "team_b": "Morocco", "venue": "nrg_stadium"},
+    {"date": "2026-07-04", "kickoff_utc": "2026-07-04T21:00:00Z", "stage": "Round of 16", "team_a": "Paraguay", "team_b": "France", "venue": "lincoln_financial"},
+    {"date": "2026-07-05", "kickoff_utc": "2026-07-05T20:00:00Z", "stage": "Round of 16", "team_a": "Brazil", "team_b": "Norway", "venue": "metlife"},
+    {"date": "2026-07-05", "kickoff_utc": "2026-07-06T00:00:00Z", "stage": "Round of 16", "team_a": "Mexico", "team_b": "England", "venue": "estadio_azteca"},
+    {"date": "2026-07-06", "kickoff_utc": "2026-07-06T19:00:00Z", "stage": "Round of 16", "team_a": "Spain", "team_b": "Portugal", "venue": "att_stadium"},
+    {"date": "2026-07-06", "kickoff_utc": "2026-07-07T00:00:00Z", "stage": "Round of 16", "team_a": "USA", "team_b": "Belgium", "venue": "lumen_field"},
+    {"date": "2026-07-07", "kickoff_utc": "2026-07-07T16:00:00Z", "stage": "Round of 16", "team_a": "Argentina", "team_b": "Egypt", "venue": "mercedes_benz"},
+    {"date": "2026-07-07", "kickoff_utc": "2026-07-07T20:00:00Z", "stage": "Round of 16", "team_a": "Switzerland", "team_b": "Colombia", "venue": "bc_place"},
 
     {"date": "2026-07-09", "kickoff_utc": "2026-07-09T20:00:00Z", "stage": "Quarter-final", "team_a": "Winner R16-1", "team_b": "Winner R16-2", "venue": "gillette"},
     {"date": "2026-07-10", "kickoff_utc": "2026-07-10T19:00:00Z", "stage": "Quarter-final", "team_a": "Winner R16-5", "team_b": "Winner R16-6", "venue": "sofi"},
