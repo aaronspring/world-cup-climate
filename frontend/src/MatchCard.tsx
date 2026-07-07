@@ -192,7 +192,7 @@ export default function MatchCard({
           transition={{ type: "spring", stiffness: 320, damping: 34 }}
           className="glass scroll-thin absolute right-0 top-0 z-20 flex h-full w-full flex-col gap-4 overflow-y-auto rounded-l-3xl p-5 shadow-2xl sm:w-[420px]"
         >
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2 pr-12">
             <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-slate-300">
               {match.stage}
             </span>
