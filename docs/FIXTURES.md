@@ -67,11 +67,20 @@ USA–Paraguay (01:00 UTC), and every June 14–15 match.
   [CBS Sports](https://www.cbssports.com/soccer/news/2026-fifa-world-cup-bracket-round-of-32-results-round-of-16-matchups-final/)):
   Canada, Morocco, Paraguay, France, Brazil, Norway, Mexico, England, Spain, Portugal,
   USA, Belgium, Argentina, Egypt, Switzerland, Colombia.
-- **Quarter-final onward** — these still depend on results not yet in, so the teams are
+- **Quarter-finals** — resolved to the **actual teams** once the Round of 16 finished
+  (2026-07-07). Each tie's two feeder R16 winners were filled in (`team_a` = winner of the
+  lower-numbered feeder, `team_b` = winner of the higher-numbered feeder per the bracket
+  map below), so all 8 are real teams with a capital in `locations.json` and the cards
+  render the full venue-vs-home comparison like the group stage. Winners were sourced from
+  the published Round-of-16 results ([CBS Sports](https://www.cbssports.com/soccer/news/2026-fifa-world-cup-bracket-round-of-32-results-round-of-16-matchups-final/),
+  [Olympics.com](https://www.olympics.com/en/news/fifa-world-cup-2026-bracket-quarter-finals-full-schedule-live-updates)):
+  Morocco, France, Spain, Belgium, Norway, England, Argentina, Switzerland. The last R16
+  tie (Switzerland vs Colombia, Vancouver) went to extra time; Switzerland advanced.
+- **Semi-final onward** — these still depend on results not yet in, so the teams are
   encoded as **bracket placeholders**: `team_a`/`team_b` are slot labels with no capital,
   so the recompute job and the frontend drop the home comparison and render the match
   **venue-only** (venue forecast + kickoff numbers + map pin). They read
-  `"Winner R16-1"`, `"Winner QF1"`, `"Loser SF1"`, since the team pool is too large to
+  `"Winner QF1"`, `"Loser SF1"`, `"Winner SF1"`, since the team pool is too large to
   enumerate.
 
   Replace a slot with the winning (or losing) team's name (a `capitals` key) once a result
@@ -102,7 +111,8 @@ order — e.g. QF4 (Kansas City) kicks off before QF3 (Miami) on 2026-07-11.
   against FIFA official before any high-stakes use. The same Al Jazeera venue caveat applies.
 - Quarter-final-onward kickoff times were reported inconsistently across sources (often in
   UK time); they were normalised to US Eastern and may be off by an hour for some matches.
-  The teams are placeholders regardless, so this only shifts which forecast hour is marked.
+  For semi-final onward the teams are placeholders regardless, so this only shifts which
+  forecast hour is marked.
 
 ## Regenerating
 
@@ -115,6 +125,7 @@ times and apply the offsets above.
 - Times are the published schedule, not necessarily exact broadcast kickoffs.
 - Venue assignments should be spot-checked against FIFA official before any high-stakes use;
   Al Jazeera had at least one venue error (see above).
-- Round-of-16 teams are the actual advancing sides (resolved once the Round of 32 finished
-  on 2026-07-03; see "Knockout rounds" above). Quarter-finals onward are included but their
-  teams are still bracket placeholders until those results are in.
+- Round-of-16 and quarter-final teams are the actual advancing sides (Round of 16 resolved
+  once the Round of 32 finished on 2026-07-03; quarter-finals resolved once the Round of 16
+  finished on 2026-07-07; see "Knockout rounds" above). Semi-finals onward are included but
+  their teams are still bracket placeholders until those results are in.
