@@ -115,7 +115,6 @@ function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
   const [lang] = useLang();
   const t = T[lang];
   const si = t.statInfoTexts;
-  const tz = stat.tz_diff_h === 0 ? t.sameTime : `${sign(stat.tz_diff_h)}h ${t.vsVenue}`;
   const hasWbgt = stat.d_wbgt != null;
 
   return (
@@ -140,29 +139,20 @@ function TeamColumn({ team, stat }: { team: string; stat: TeamStat }) {
           cls={deltaColor(stat.d_heat_index)}
           info={{ text: si.deltaFeels, ...NOAA_HI }}
         />
-        {hasWbgt ? (
+        {hasWbgt && (
           <Stat
             label={t.deltaWbgt}
             value={`${sign(stat.d_wbgt!)}°`}
             cls={deltaColor(stat.d_wbgt!)}
             info={{ text: si.deltaWbgt, ...STULL_WBGT }}
           />
-        ) : (
-          <Stat
-            label={t.bodyClock}
-            value={tz === t.sameTime ? "0h" : `${sign(stat.tz_diff_h)}h`}
-            cls="text-violet-300"
-            info={{ text: si.bodyClock }}
-          />
         )}
-        {hasWbgt && (
-          <Stat
-            label={t.bodyClock}
-            value={tz === t.sameTime ? "0h" : `${sign(stat.tz_diff_h)}h`}
-            cls="text-violet-300"
-            info={{ text: si.bodyClock }}
-          />
-        )}
+        <Stat
+          label={t.bodyClock}
+          value={`${sign(stat.tz_diff_h)}h`}
+          cls="text-violet-300"
+          info={{ text: si.bodyClock }}
+        />
       </div>
     </div>
   );
@@ -188,6 +178,8 @@ export default function MatchCard({
   const [lang] = useLang();
   const t: Translations = T[lang];
   const si = t.statInfoTexts;
+  // Beyond the forecast horizon (far-future knockout fixture): no IFS data yet.
+  const pending = match?.t2m_at_kickoff == null;
 
   return (
     <AnimatePresence>
@@ -200,7 +192,7 @@ export default function MatchCard({
           transition={{ type: "spring", stiffness: 320, damping: 34 }}
           className="glass scroll-thin absolute right-0 top-0 z-20 flex h-full w-full flex-col gap-4 overflow-y-auto rounded-l-3xl p-5 shadow-2xl sm:w-[420px]"
         >
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2 pr-12">
             <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-slate-300">
               {match.stage}
             </span>
@@ -235,36 +227,59 @@ export default function MatchCard({
           </div>
 
           {/* Kickoff hero tile */}
-          <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4">
-            <div
-              className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-black"
-              style={{ background: tempColor(match.heat_index_at_kickoff) }}
-            >
-              {Math.round(match.heat_index_at_kickoff)}°
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1 text-sm font-semibold">
-                {t.feelsLike}
-                <InfoTooltip text={si.feelsLike} {...NOAA_HI} />
+          {pending ? (
+            <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4">
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-slate-600/40 text-2xl font-extrabold text-slate-300">
+                —
               </div>
-              <div className="text-xs text-slate-400">
-                {t.airTemp(Math.round(match.t2m_at_kickoff))}
-                {match.wbgt_at_kickoff != null && (
-                  <span className="ml-2">
-                    · WBGT {Math.round(match.wbgt_at_kickoff)}°
-                    <InfoTooltip text={si.wbgtKickoff} {...STULL_WBGT} />
-                  </span>
-                )}
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold">{t.forecastPending}</div>
+                <div className="text-xs text-slate-400">{t.forecastPendingNote}</div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-4">
+              <div
+                className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-black"
+                style={{ background: tempColor(match.heat_index_at_kickoff!) }}
+              >
+                {Math.round(match.heat_index_at_kickoff!)}°
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1 text-sm font-semibold">
+                  {t.feelsLike}
+                  <InfoTooltip text={si.feelsLike} {...NOAA_HI} />
+                </div>
+                <div className="text-xs text-slate-400">
+                  {t.airTemp(Math.round(match.t2m_at_kickoff!))}
+                  {match.wbgt_at_kickoff != null && (
+                    <span className="ml-2">
+                      · WBGT {Math.round(match.wbgt_at_kickoff)}°
+                      <InfoTooltip text={si.wbgtKickoff} {...STULL_WBGT} />
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
-          <div className="flex gap-3">
-            <TeamColumn team={match.team_a} stat={match.stats.team_a} />
-            <TeamColumn team={match.team_b} stat={match.stats.team_b} />
-          </div>
+          {match.stats.team_a || match.stats.team_b ? (
+            <div className="flex gap-3">
+              {match.stats.team_a && <TeamColumn team={match.team_a} stat={match.stats.team_a} />}
+              {match.stats.team_b && <TeamColumn team={match.team_b} stat={match.stats.team_b} />}
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-white/5 px-3.5 py-3 text-sm text-slate-400">
+              {t.knockoutTbd}
+            </div>
+          )}
 
-          {/* Chart variable selector */}
+          {/* Chart variable selector — hidden when the forecast is pending */}
+          {pending ? (
+            <div className="rounded-2xl bg-black/20 px-3.5 py-6 text-center text-sm text-slate-400">
+              {t.forecastPendingNote}
+            </div>
+          ) : (
           <div>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {Object.entries(variables).map(([k, m]) => (
@@ -286,11 +301,15 @@ export default function MatchCard({
             </div>
             <div className="rounded-2xl bg-black/20 p-3">
               <div className="mb-1 px-1 text-xs text-slate-400">
-                {t.venueSeries(t.varLabels[varKey] ?? variables[varKey].label, variables[varKey].unit)}
+                {(match.series.team_a || match.series.team_b ? t.venueSeries : t.venueOnlySeries)(
+                  t.varLabels[varKey] ?? variables[varKey].label,
+                  variables[varKey].unit,
+                )}
               </div>
               <Chart match={match} varKey={varKey} meta={variables[varKey]} forecastStart={forecastStart} />
             </div>
           </div>
+          )}
         </motion.aside>
       )}
     </AnimatePresence>

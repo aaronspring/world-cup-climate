@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MapView from "./MapView";
 import MatchCard from "./MatchCard";
 import { loadCycle, loadDay, loadMatch } from "./data";
+import { candidateDates, pickNextMatch } from "./nextMatch";
 import type { Cycle, Match, Pin } from "./types";
 import { flag } from "./flags";
 import { tempColor, TEMP_LEGEND } from "./colors";
@@ -11,6 +12,9 @@ import { T, LOCALE } from "./i18n";
 const wd = (d: string, locale: string) =>
   new Date(d + "T00:00:00Z").toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" });
 const dayNum = (d: string) => new Date(d + "T00:00:00Z").getUTCDate();
+// "Jun 28" / "Jul 4" — month-aware so the knockout dates in July read correctly.
+const monthDay = (d: string, locale: string) =>
+  new Date(d + "T00:00:00Z").toLocaleDateString(locale, { month: "short", day: "numeric", timeZone: "UTC" });
 
 export default function App() {
   const [lang, setLang] = useLang();
@@ -24,13 +28,29 @@ export default function App() {
   const [match, setMatch] = useState<Match | null>(null);
   const [varKey, setVarKey] = useState("t2m");
   const [error, setError] = useState<string | null>(null);
+  // First-load selection: the date effect clears the selection on every date
+  // change, so we stash the next match's id here and re-apply it once that
+  // day's pins arrive.
+  const pendingSelId = useRef<string | null>(null);
+  // The date strip scrolls horizontally; keep the active date in view so the
+  // next match's date is visible on first load (it can sit far to the right).
+  const activeDateRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     loadCycle()
-      .then((c) => {
+      .then(async (c) => {
         setCycle(c);
-        const today = new Date().toISOString().slice(0, 10);
-        setDate(c.dates.includes(today) ? today : c.dates[0]);
+        const nowIso = new Date().toISOString();
+        // On first visit, jump to the next match based on the current time.
+        const days = await Promise.all(candidateDates(c.dates, nowIso).map(loadDay));
+        const next = pickNextMatch(days, nowIso);
+        if (next) {
+          pendingSelId.current = next.id;
+          setDate(next.date);
+        } else {
+          const today = nowIso.slice(0, 10);
+          setDate(c.dates.includes(today) ? today : c.dates[0]);
+        }
       })
       .catch((e) => setError(String(e)));
   }, []);
@@ -39,7 +59,15 @@ export default function App() {
     if (!date) return;
     setSelId(null);
     setMatch(null);
-    loadDay(date).then((d) => setPins(d.matches)).catch((e) => setError(String(e)));
+    loadDay(date)
+      .then((d) => {
+        setPins(d.matches);
+        if (pendingSelId.current) {
+          setSelId(pendingSelId.current);
+          pendingSelId.current = null;
+        }
+      })
+      .catch((e) => setError(String(e)));
   }, [date]);
 
   useEffect(() => {
@@ -48,6 +76,10 @@ export default function App() {
     loadMatch(selId).then((m) => live && setMatch(m)).catch((e) => setError(String(e)));
     return () => { live = false; };
   }, [selId]);
+
+  useEffect(() => {
+    activeDateRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [date, cycle]);
 
   const sortedPins = useMemo(
     () => [...pins].sort((a, b) => a.kickoff_utc.localeCompare(b.kickoff_utc)),
@@ -74,6 +106,20 @@ export default function App() {
   return (
     <div className="relative h-dvh w-screen overflow-hidden">
       <MapView pins={sortedPins} selectedId={selId} onSelect={setSelId} overlayMap={overlayMap} />
+
+      {/* Top-right: GitHub link */}
+      <a
+        href="https://github.com/aaronspring/world-cup-climate"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="glass absolute right-3 top-3 z-30 grid h-10 w-10 place-items-center rounded-2xl text-slate-200 transition hover:text-white sm:right-4 sm:top-4"
+        title="View source on GitHub"
+        aria-label="View source on GitHub"
+      >
+        <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+        </svg>
+      </a>
 
       {/* Header */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-3 sm:p-4">
@@ -102,6 +148,7 @@ export default function App() {
           {cycle?.dates.map((d) => (
             <button
               key={d}
+              ref={d === date ? activeDateRef : undefined}
               onClick={() => setDate(d)}
               className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 text-center transition ${
                 d === date ? "bg-white text-slate-900" : "text-slate-300 hover:bg-white/10"
@@ -121,7 +168,7 @@ export default function App() {
         }`}
       >
         <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          {t.matchCount(sortedPins.length, dayNum(date))}
+          {t.matchCount(sortedPins.length, monthDay(date, locale))}
         </div>
         {sortedPins.map((p) => (
           <button
@@ -133,9 +180,9 @@ export default function App() {
           >
             <span
               className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-xs font-bold text-black"
-              style={{ background: tempColor(p.t2m_at_kickoff) }}
+              style={{ background: p.t2m_at_kickoff == null ? "#64748b" : tempColor(p.t2m_at_kickoff) }}
             >
-              {Math.round(p.t2m_at_kickoff)}°
+              {p.t2m_at_kickoff == null ? "—" : `${Math.round(p.t2m_at_kickoff)}°`}
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">

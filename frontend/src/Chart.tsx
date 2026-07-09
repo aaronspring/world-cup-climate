@@ -49,12 +49,13 @@ export default function Chart({
   const t = T[lang];
   const thLabels = t.chart.thresholds;
   const locale = LOCALE[lang];
+  // team_a/team_b series are absent for knockout placeholders → venue-only chart.
   const { time, venue, team_a, team_b } = match.series;
   const data = time.map((t, i) => ({
     t,
     venue: venue[varKey][i],
-    a: team_a[varKey][i],
-    b: team_b[varKey][i],
+    a: team_a?.[varKey][i],
+    b: team_b?.[varKey][i],
   }));
   const [colorA, colorB] = matchColors(match.team_a, match.team_b);
   const kickoff = match.kickoff_utc;
@@ -140,8 +141,12 @@ export default function Chart({
           );
         })}
         <Area type="monotone" dataKey="venue" name={t.chart.venue} stroke={VENUE_COLOR} strokeWidth={2.4} fill="url(#venueFill)" dot={false} />
-        <Line type="monotone" dataKey="a" name={match.stats.team_a.home} stroke={colorA} strokeWidth={1.8} strokeDasharray="5 3" dot={false} />
-        <Line type="monotone" dataKey="b" name={match.stats.team_b.home} stroke={colorB} strokeWidth={1.8} strokeDasharray="5 3" dot={false} />
+        {team_a && (
+          <Line type="monotone" dataKey="a" name={match.stats.team_a?.home ?? match.team_a} stroke={colorA} strokeWidth={1.8} strokeDasharray="5 3" dot={false} />
+        )}
+        {team_b && (
+          <Line type="monotone" dataKey="b" name={match.stats.team_b?.home ?? match.team_b} stroke={colorB} strokeWidth={1.8} strokeDasharray="5 3" dot={false} />
+        )}
       </ComposedChart>
     </ResponsiveContainer>
   );

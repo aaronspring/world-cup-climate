@@ -72,8 +72,9 @@ function features(pins: Pin[]): GeoJSON.FeatureCollection {
       geometry: { type: "Point", coordinates: [p.venue.lon, p.venue.lat] },
       properties: {
         id: p.id,
-        color: tempColor(p.t2m_at_kickoff),
-        temp: `${Math.round(p.t2m_at_kickoff)}°`,
+        // Pending (beyond forecast horizon) → neutral gray pin with an em dash.
+        color: p.t2m_at_kickoff == null ? "#64748b" : tempColor(p.t2m_at_kickoff),
+        temp: p.t2m_at_kickoff == null ? "—" : `${Math.round(p.t2m_at_kickoff)}°`,
       },
     })),
   };
